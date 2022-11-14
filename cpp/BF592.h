@@ -5,10 +5,16 @@
 //#error  Must #include "core.h"
 #endif 
 
+#include <bfrom.h>
+#include <sys\exception.h>
 #include <cdefBF592-A.h>
 #include <sysreg.h>
 
 #include "types.h"
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+extern void InitIVG(u32 IVG, u32 PID, void (*EVT)());
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

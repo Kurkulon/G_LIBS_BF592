@@ -113,6 +113,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\boot_imp.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\ComPort.h"
 				>
 			</File>
@@ -130,6 +134,10 @@
 			</File>
 			<File
 				RelativePath=".\cpp\list.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\system_imp.h"
 				>
 			</File>
 			<File

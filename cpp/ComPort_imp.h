@@ -14,7 +14,7 @@
 
 extern dword millisecondsCount;
 
-#define MASKRTS (1<<5)
+//#define MASKRTS (1<<5)
 
 #pragma optimize_for_speed
 //#pragma optimize_as_cmd_line
@@ -30,7 +30,7 @@ bool ComPort::Connect(dword speed, byte parity)
 
 	_BaudRateRegister = BoudToPresc(speed);
 
-	_ModeRegister = 3;
+	_ModeRegister = WLS(8);
 
 	switch (parity)
 	{
@@ -39,17 +39,21 @@ bool ComPort::Connect(dword speed, byte parity)
 			break;
 
 		case 1:
-			_ModeRegister |= 0x08;
+			_ModeRegister |= PEN;
 			break;
 
 		case 2:
-			_ModeRegister |= 0x18;
+			_ModeRegister |= PEN|EPS;
 			break;
 	};
 
-	*pUART0_GCTL = 1;
+	*pUART0_GCTL = UCEN;
 	*pUART0_LCR = _ModeRegister;
 	SetBoudRate(_BaudRateRegister);
+
+	PIO_RTS_MUX &= ~MASK_RTS;
+	PIO_RTS_DIR |= MASK_RTS;
+	PIO_RTS_CLR  = MASK_RTS;
 
 	_status485 = READ_END;
 
@@ -101,10 +105,10 @@ void ComPort::SetBoudRate(word presc)
 
 	w = presc;
 
-	*pUART0_LCR |= 128;
+	*pUART0_LCR |= DLAB;
 	*pUART0_DLL = b[0];
 	*pUART0_DLH = b[1];
-	*pUART0_LCR &= ~128;
+	*pUART0_LCR &= ~DLAB;
 }
 
 #endif
@@ -113,7 +117,8 @@ void ComPort::SetBoudRate(word presc)
 
 void ComPort::EnableTransmit(void* src, word count)
 {
-	*pPORTFIO_SET = MASKRTS;
+	PIO_RTS_SET = MASK_RTS;
+
 	*pDMA8_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
 
@@ -135,14 +140,16 @@ void ComPort::DisableTransmit()
 {
 	*pDMA8_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
-	*pPORTFIO_CLEAR = MASKRTS;
+
+	PIO_RTS_CLR = MASK_RTS;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void ComPort::EnableReceive(void* dst, word count)
 {
-	*pPORTFIO_CLEAR = MASKRTS;
+	PIO_RTS_CLR = MASK_RTS;
+
 	*pDMA7_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
 
@@ -166,7 +173,8 @@ void ComPort::DisableReceive()
 {
 	*pDMA7_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
-	*pPORTFIO_CLEAR = MASKRTS;
+
+	PIO_RTS_CLR = MASK_RTS;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
