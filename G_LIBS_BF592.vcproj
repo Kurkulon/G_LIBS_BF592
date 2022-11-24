@@ -141,6 +141,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\twi.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\twi_imp.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\types.h"
 				>
 			</File>

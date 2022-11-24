@@ -82,7 +82,7 @@ static bool RequestFunc_05(Req *r, ComPort::WriteBuffer *wb)
 
 	#ifdef BOOT_NETADR
 
-		if (req->adr == ~0 || r->len < sizeof(ReqDsp05)) return  false;
+		if (req->adr == 0 || r->len < sizeof(ReqDsp05)) return  false;
 	
 		rsp.adr = req->adr;
 
@@ -133,7 +133,7 @@ static bool RequestFunc_06(Req *r, ComPort::WriteBuffer *wb)
 
 	#ifdef BOOT_NETADR
 
-		if (req->adr == ~0)	return false;
+		if (req->adr == 0)	return false;
 
 		rsp.adr = req->adr;
 
@@ -164,7 +164,7 @@ static bool RequestFunc(Req *r, ComPort::WriteBuffer *wb)
 	u16 t = req->rw;
 
 	#ifdef BOOT_NETADR
-	if (req->adr != GetNetAdr() || req->adr != ~0 || (t & manReqMask) != manReqWord || r->len < 2)
+	if ((req->adr != GetNetAdr() && req->adr != 0) || (t & manReqMask) != manReqWord || r->len < 2)
 	#else
 	if ((t & manReqMask) != manReqWord || r->len < 2)
 	#endif
