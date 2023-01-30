@@ -51,7 +51,10 @@ bool ComPort::Connect(dword speed, byte parity)
 	*pUART0_LCR = _ModeRegister;
 	SetBoudRate(_BaudRateRegister);
 
-	PIO_RTS_MUX &= ~MASK_RTS;
+	*pPORTF_MUX	&= ~(PF11|PF12);	
+	*pPORTF_FER |= PF11|PF12;	
+
+	PIO_RTS_FER &= ~MASK_RTS;
 	PIO_RTS_DIR |= MASK_RTS;
 	PIO_RTS_CLR  = MASK_RTS;
 
