@@ -33,6 +33,24 @@
 
 //#pragma optimize_for_speed
 
+
+#ifndef NUM_SECTORS
+#define NUM_SECTORS 	64			/* number of sectors in the flash device */
+#endif
+
+
+#ifndef BAUD_RATE_DIVISOR
+#define BAUD_RATE_DIVISOR 	50
+#endif
+
+/* application definitions */
+#define COMMON_SPI_SETTINGS (SPE|MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
+#define TIMOD01 (0x01)                  /* sets the SPI to work with core instructions */
+
+#define COMMON_SPI_DMA_SETTINGS (MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
+
+
+
 static char 		*pFlashDesc =		"Atmel AT25DF021";
 static char 		*pDeviceCompany	=	"Atmel Corporation";
 
@@ -235,7 +253,7 @@ static void Wait_For_SPIF(void)
 {
 	Delay(1);
 
-	while((*pSPI0_STAT & SPIF) == 0) { *pWDOG_STAT = 0; };
+	while((*pSPI0_STAT & SPIF) == 0) HW::ResetWDT();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -244,14 +262,14 @@ static void Wait_For_RXS_SPIF(void)
 {
 	Delay(1);
 
-	while((*pSPI0_STAT & (SPIF|RXS)) != (SPIF|RXS)) { *pWDOG_STAT = 0; };
+	while((*pSPI0_STAT & (SPIF|RXS)) != (SPIF|RXS)) HW::ResetWDT();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static u16 WaitReadSPI0()
 {
-	while ((*pSPI0_STAT & RXS) == 0) { *pWDOG_STAT = 0; };
+	while ((*pSPI0_STAT & RXS) == 0) HW::ResetWDT();
 
 	return *pSPI0_RDBR;
 }
@@ -272,11 +290,11 @@ static void WriteSyncDMA(void *data, u16 count)
 
 	Delay(10);
 
-	while ((*pDMA5_IRQ_STATUS & DMA_DONE) == 0) { *pWDOG_STAT = 0; };
+	while ((*pDMA5_IRQ_STATUS & DMA_DONE) == 0) HW::ResetWDT();
 
 	Delay(10);
 
-	while ((*pSPI0_STAT & SPIF) == 0 || (*pSPI0_STAT & TXS)) { *pWDOG_STAT = 0; };
+	while ((*pSPI0_STAT & SPIF) == 0 || (*pSPI0_STAT & TXS)) HW::ResetWDT();
 
 	*pDMA5_IRQ_STATUS = 1;
 }
@@ -334,7 +352,7 @@ static void ReadSyncDMA(void *data, u16 count)
 
 	Delay(10);
 
-	while ((*pDMA5_IRQ_STATUS & DMA_DONE) == 0) { *pWDOG_STAT = 0; };
+	while ((*pDMA5_IRQ_STATUS & DMA_DONE) == 0) HW::ResetWDT();
 
 	*pDMA5_IRQ_STATUS = 1;
 }
@@ -449,7 +467,7 @@ u16 at25df021_GetCRC16(u32 stAdr, u16 count)
 
 		crc.w = tableCRC[crc.b[0] ^ t] ^ crc.b[1];
 		
-		*pWDOG_STAT = 0;
+		HW::ResetWDT();
 	};
 	
 	*pSPI0_CTL = 0;
@@ -779,7 +797,7 @@ static ERROR_CODE Wait_For_WEL(void)
 
 		ErrorCode = POLL_TIMEOUT;	// Time out error
 
-		*pWDOG_STAT = 0;
+		HW::ResetWDT();
 	};
 
 	return ErrorCode;
@@ -818,7 +836,7 @@ static ERROR_CODE Wait_For_Status( char Statusbit )
 
 		ErrorCode = POLL_TIMEOUT;	// Time out error
 
-		*pWDOG_STAT = 0;
+		HW::ResetWDT();
 	};
 
 	return ErrorCode;
@@ -875,8 +893,10 @@ static void SPI_OFF(void)
 {
 	volatile int i;
 
+	Delay(1);
+
 	*pPORTFIO_SET = PF8;
-	*pSPI0_CTL = CPHA|CPOL;	// disable SPI
+	*pSPI0_CTL = COMMON_SPI_SETTINGS & ~(SPE|MSTR);	// disable SPI
 	*pSPI0_BAUD = 0;
 
 	Delay(1);

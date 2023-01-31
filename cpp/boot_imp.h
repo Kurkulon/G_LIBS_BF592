@@ -68,7 +68,7 @@ static void RunMainApp()
 {
 	if (!flashChecked) CheckFlash();
 
-	if (flashOK && flashCRCOK) bfrom_SpiBoot(FLASH_START_ADR, BFLAG_PERIPHERAL | BFLAG_NOAUTO | BFLAG_FASTREAD | BFLAG_TYPE3 | 7, 0, 0);
+	if (flashOK && flashCRCOK) HW::DisableWDT(), bfrom_SpiBoot(FLASH_START_ADR, BFLAG_PERIPHERAL | BFLAG_NOAUTO | BFLAG_FASTREAD | BFLAG_TYPE3 | 7, 0, 0);
 	
 	tm32.Reset(); timeOut = MS2RT(1000);
 }
@@ -282,7 +282,7 @@ static void CheckFlash()
 	
 	flashOK = flashChecked = flashCRCOK = false;
 
-	at25df021_Read(buf, FLASH_START_ADR, sizeof(buf));
+	at25df021_Read(buf, 0, sizeof(buf));
 
 	while (1)
 	{
@@ -350,14 +350,12 @@ int main( void )
 
 	while (1)
 	{
-		MAIN_LOOP_PIN_SET();	
-		
 		UpdateBlackFin();
 		FlashUpdate();
 
 		if (tm32.Check(timeOut)) RunMainApp();
 
-		MAIN_LOOP_PIN_CLR();
+		MAIN_LOOP_PIN_TGL();
 	};
 
 //	return 0;

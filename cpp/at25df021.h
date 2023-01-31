@@ -4,10 +4,13 @@
 #include "types.h"
 #include "bf592.h"
 
+#ifndef FLASH_START_ADR
 #define FLASH_START_ADR 0x10000 	
+#endif
 
-#define NUM_SECTORS 	64			/* number of sectors in the flash device */
+#ifndef SECTOR_SIZE
 #define SECTOR_SIZE		4096
+#endif
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -70,13 +73,6 @@ enum ERROR_CODE
 //	u32 arg;
 //}; 
 
-/* application definitions */
-#define COMMON_SPI_SETTINGS (SPE|MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
-#define TIMOD01 (0x01)                  /* sets the SPI to work with core instructions */
-
-#define COMMON_SPI_DMA_SETTINGS (MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
-
-#define BAUD_RATE_DIVISOR 	5
 //#define PE4 0x0010
 
 

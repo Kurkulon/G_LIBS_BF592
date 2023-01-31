@@ -78,10 +78,8 @@ static void LowLevelInit()
 	*pPORTGIO_MASKA 	= INIT_PORTGIO_MASKA	;
 	*pPORTGIO_MASKB 	= INIT_PORTGIO_MASKB	;
 
-#ifndef _DEBUG
 	*pWDOG_CNT 			= INIT_WDOG_CNT;
 	*pWDOG_CTL 			= INIT_WDOG_CTL;
-#endif
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
