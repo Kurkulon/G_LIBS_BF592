@@ -75,11 +75,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\DMA.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\heaptab.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\cpp\list.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\spi.cpp"
 				>
 			</File>
 			<Filter
@@ -133,7 +141,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\DMA.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\list.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\SPI.h"
 				>
 			</File>
 			<File

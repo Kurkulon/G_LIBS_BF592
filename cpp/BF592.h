@@ -16,6 +16,9 @@
 
 extern void InitIVG(u32 IVG, u32 PID, void (*EVT)());
 
+inline void SIC_EnableIRQ(byte pid) { *pSIC_IMASK |= 1UL<<pid; }
+inline void SIC_DisableIRQ(byte pid) { *pSIC_IMASK &= ~(1UL<<pid); }
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 inline void ResetWDT()		{ *pWDOG_STAT = 0;		}
@@ -82,52 +85,281 @@ extern byte core_sys_array[0x100000];
 
 namespace T_HW
 {
-	typedef volatile u16 BF_R16;// Hardware register definition
-	typedef volatile u32 BF_REG;// Hardware register definition
-	typedef volatile void * BF_PTR;// Hardware register definition
+	typedef volatile u16	BF_R16;		// Hardware register definition
+	typedef volatile u32	BF_R32;		// Hardware register definition
+	typedef volatile void	*BF_PTR;	// Hardware register definition
 
-	typedef void(*BF_IHP)();	// Interrupt handler pointer
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	struct S_SMC
+	struct S_SPI
 	{
-		BF_REG	NFC_CFG;	
-		BF_REG	NFC_CTRL;	
-		BF_REG	NFC_SR;	
-		BF_REG	NFC_IER;	
-		BF_REG	NFC_IDR;	
-		BF_REG	NFC_IMR;	
-		BF_REG	NFC_ADDR;	
-		BF_REG	NFC_BANK;	
-		BF_REG	ECC_CTRL;	
-		BF_REG	ECC_MD;	
-		BF_REG	ECC_SR1;	
-		BF_REG	ECC_PR0;	
-		BF_REG	ECC_PR1;	
-		BF_REG	ECC_SR2;	
-		BF_REG	ECC_PR2;	
-		BF_REG	ECC_PR3;	
-		BF_REG	ECC_PR4;	
-		BF_REG	ECC_PR5;	
-		BF_REG	ECC_PR6;	
-		BF_REG	ECC_PR7;	
-		BF_REG	ECC_PR8;	
-		BF_REG	ECC_PR9;	
-		BF_REG	ECC_PR10;	
-		BF_REG	ECC_PR11;	
-		BF_REG	ECC_PR12;	
-		BF_REG	ECC_PR13;	
-		BF_REG	ECC_PR14;	
-		BF_REG	ECC_PR15;	
+		BF_R16	Ctl;					//	SPI Control Register	
+		BF_R16			z__Reserved1;
+		BF_R16	Flg;					//	SPI Flag register								
+		BF_R16			z__Reserved2;
+		BF_R16	Stat;					//	SPI Status register							
+		BF_R16			z__Reserved3;
+		BF_R16	TDBR;					//	SPI Transmit Data Buffer Register				
+		BF_R16			z__Reserved4;
+		BF_R16	RDBR;					//	SPI Receive Data Buffer Register				
+		BF_R16			z__Reserved5;
+		BF_R16	Baud;					//	SPI Baud rate Register							
+		BF_R16			z__Reserved6;
+		BF_R16	Shadow;					//	SPI_RDBR Shadow Register						
+	};
 
-		struct S_CSR { BF_REG	SETUP, PULSE, CYCLE, TIMINGS, MODE;	} CSR[8];
+	typedef S_SPI S_SPI0, S_SPI1;
 
-		BF_REG	OCMS;	
-		BF_REG	KEY1;	
-		BF_REG	KEY2;	
-		BF_REG	WPCR;	
-		BF_REG	WPSR;	
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_TIMERx
+	{
+		BF_R16	Config;				//	Timer x Configuration Register					
+		BF_R16			z__Reserved1;
+		BF_R32	Counter;			//	Timer x Counter Register						
+		BF_R32	Period;				//	Timer x Period Register							
+		BF_R32	Width;				//	Timer x Width Register		
+	};
+
+	typedef S_TIMERx S_TIMER0, S_TIMER1, S_TIMER2;
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_TIMER
+	{
+		BF_R16	Enable;					//	Timer Enable Register	
+		BF_R16			z__Reserved1;
+		BF_R16	Disable;				//	Timer Disable Register	
+		BF_R16			z__Reserved2;
+		BF_R16	Status;					//	Timer Status Register	
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_PIO
+	{
+		BF_R16	PinState;			//	Port I/O Pin State Specify Register				
+		BF_R16			z__Reserved1;
+		BF_R16	Clear;				//	Port I/O Peripheral Interrupt Clear Register	
+		BF_R16			z__Reserved2;
+		BF_R16	Set;				//	Port I/O Peripheral Interrupt Set Register		
+		BF_R16			z__Reserved3;
+		BF_R16	Toggle;				//	Port I/O Pin State Toggle Register				
+		BF_R16			z__Reserved4;
+		BF_R16	MaskA;				//	Port I/O Mask State Specify Interrupt A Register
+		BF_R16			z__Reserved5;
+		BF_R16	MaskA_Clr;			//	Port I/O Mask Disable Interrupt A Register		
+		BF_R16			z__Reserved6;
+		BF_R16	MaskA_Set;			//	Port I/O Mask Enable Interrupt A Register		
+		BF_R16			z__Reserved7;
+		BF_R16	MaskA_Tgl;			//	Port I/O Mask Toggle Enable Interrupt A Register
+		BF_R16			z__Reserved8;
+		BF_R16	MaskB;				//	Port I/O Mask State Specify Interrupt B Register
+		BF_R16			z__Reserved9;
+		BF_R16	MaskB_Clr;			//	Port I/O Mask Disable Interrupt B Register		
+		BF_R16			z__Reserved10;
+		BF_R16	MaskB_Set;			//	Port I/O Mask Enable Interrupt B Register		
+		BF_R16			z__Reserved11;
+		BF_R16	MaskB_Tgl;			//	Port I/O Mask Toggle Enable Interrupt B Register
+		BF_R16			z__Reserved12;
+		BF_R16	Dir;				//	Port I/O Direction Register						
+		BF_R16			z__Reserved13;
+		BF_R16	Polar;				//	Port I/O Source Polarity Register				
+		BF_R16			z__Reserved14;
+		BF_R16	Edge;				//	Port I/O Source Sensitivity Register			
+		BF_R16			z__Reserved51;
+		BF_R16	Both;				//	Port I/O Set on BOTH Edges Register				
+		BF_R16			z__Reserved16;
+		BF_R16	Inen;				//	Port I/O Input Enable Register 		
+
+		inline void 	SET(u32 m) 			{ Set = m; }
+		inline void 	CLR(u32 m) 			{ Clear = m; }
+		inline void 	NOT(u32 m) 			{ Toggle = m; }
+		inline void 	WBIT(u32 m, bool c) { if (c) SET(m); else CLR(m); }
+		inline void 	BSET(u16 b) 		{ Set = 1UL<< b; }
+		inline void 	BCLR(u16 b) 		{ Clear = 1UL << b; }
+		inline void 	BTGL(u16 b) 		{ Toggle = 1UL << b; }
+
+		inline bool 	TBSET(u16 b) 		{ return PinState & (1<<b); }
+		inline bool 	TBCLR(u16 b) 		{ return (PinState & (1<<b)) == 0; }
+	};
+
+	typedef S_PIO S_PIOF, S_PIOG;
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_PORT
+	{
+		BF_R16	FER;						//	Port x Function Enable Register (Alternate/Flag*)
+		BF_R16			z__Reserved1;
+		BF_R16	MUX;            			//	Port x mux control 								
+		BF_R16			z__Reserved3;
+		BF_R16	PADCTL;        				//	Port x pad control 	
+	};
+
+	typedef S_PORT S_PORTF, S_PORTG;
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_SPORT
+	{
+		BF_R16	TCR1;						//	SPORT Transmit Configuration 1 Register			
+		BF_R16			z__Reserved1;
+		BF_R16	TCR2;						//	SPORT Transmit Configuration 2 Register			
+		BF_R16			z__Reserved2;
+		BF_R16	TCLKDIV;					//	SPORT Transmit Clock Divider					
+		BF_R16			z__Reserved3;
+		BF_R16	TFSDIV;						//	SPORT Transmit Frame Sync Divider				
+		BF_R16			z__Reserved4;
+		BF_R32	TX;							//	SPORT TX Data Register							
+		BF_R32			z__Reserved5;
+		BF_R32	RX;							//	SPORT RX Data Register							
+		BF_R16	RCR1;						//	SPORT Transmit Configuration 1 Register			
+		BF_R16			z__Reserved6;
+		BF_R16	RCR2;						//	SPORT Transmit Configuration 2 Register			
+		BF_R16			z__Reserved7;
+		BF_R16	RCLKDIV;					//	SPORT Receive Clock Divider						
+		BF_R16			z__Reserved8;
+		BF_R16	RFSDIV;						//	SPORT Receive Frame Sync Divider				
+		BF_R16			z__Reserved9;
+		BF_R16	STAT;						//	SPORT Status Register							
+		BF_R16			z__Reserved10;
+		BF_R16	CHNL;						//	SPORT Current Channel Register					
+		BF_R16			z__Reserved11;
+		BF_R16	MCMC1;						//	SPORT Multi-Channel Configuration Register 1	
+		BF_R16			z__Reserved12;
+		BF_R16	MCMC2;						//	SPORT Multi-Channel Configuration Register 2	
+		BF_R16			z__Reserved13;
+		BF_R32	MTCS0;						//	SPORT Multi-Channel Transmit Select Register 0	
+		BF_R32	MTCS1;						//	SPORT Multi-Channel Transmit Select Register 1	
+		BF_R32	MTCS2;						//	SPORT Multi-Channel Transmit Select Register 2	
+		BF_R32	MTCS3;						//	SPORT Multi-Channel Transmit Select Register 3	
+		BF_R32	MRCS0;						//	SPORT Multi-Channel Receive Select Register 0	
+		BF_R32	MRCS1;						//	SPORT Multi-Channel Receive Select Register 1	
+		BF_R32	MRCS2;						//	SPORT Multi-Channel Receive Select Register 2	
+		BF_R32	MRCS3;						//	SPORT Multi-Channel Receive Select Register 3	
+	};
+
+	typedef S_SPORT S_SPORT0, S_SPORT1;
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	struct DMADSC_AM
+	{
+		union { u32 SA;	struct { u16 SAL; u16 SAH; }; };
+		u16 DMACFG;
+		u16 XCNT;
+		u16 XMOD;
+		u16 YCNT;
+		u16 YMOD;
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	struct DMADSC_SLM
+	{
+		u16 NDPL;
+		u16 SAL; 
+		u16 SAH; 
+		u16 DMACFG;
+		u16 XCNT;
+		u16 XMOD;
+		u16 YCNT;
+		u16 YMOD;
+
+		inline void SA(u32 v) { SAL = v; SAH = v>>16; }
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct DMADSC_LLM
+	{
+		union { void* NDP; struct { u16 NDPL; u16 NDPH; }; };
+		union { void* SA;	struct { u16 SAL; u16 SAH; }; };
+		u16 DMACFG;
+		u16 XCNT;
+		u16 XMOD;
+		u16 YCNT;
+		u16 YMOD;
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	struct S_DMACH
+	{
+		BF_PTR	NEXT_DESC_PTR;									//	DMA Channel x Next Descriptor Pointer Register		
+		BF_PTR	START_ADDR;										//	DMA Channel x Start Address Register				
+		BF_R16	CONFIG;											//	DMA Channel x Configuration Register				
+								BF_R16	z__Reserved1[3];							
+		BF_R16	X_COUNT;										//	DMA Channel x X Count Register						
+								BF_R16	z__Reserved2;							
+		BF_R16	X_MODIFY;										//	DMA Channel x X Modify Register						
+								BF_R16	z__Reserved3;									
+		BF_R16	Y_COUNT;										//	DMA Channel x Y Count Register						
+								BF_R16	z__Reserved4;									
+		BF_R16	Y_MODIFY;										//	DMA Channel x Y Modify Register						
+								BF_R16	z__Reserved5;									
+		BF_PTR	CURR_DESC_PTR;									//	DMA Channel x Current Descriptor Pointer Register	
+		BF_PTR	CURR_ADDR;										//	DMA Channel x Current Address Register				
+		BF_R16	IRQ_STATUS;										//	DMA Channel x Interrupt/Status Register				
+								BF_R16	z__Reserved6;									
+		BF_R16	PERIPHERAL_MAP;									//	DMA Channel x Peripheral Map Register				
+								BF_R16	z__Reserved7;									
+		BF_R16	CURR_X_COUNT;									//	DMA Channel x Current X Count Register				
+								BF_R16	z__Reserved8[3];									
+		BF_R16	CURR_Y_COUNT;									//	DMA Channel x Current Y Count Register				
+								BF_R16	z__Reserved9[3];
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_DMA
+	{
+		BF_R16	TC_PER;						// 0xFFC00B0C	/* Traffic Control Periods Register						
+							BF_R16	z__Reserved1;
+		BF_R16	TC_CNT;						// 0xFFC00B10	/* Traffic Control Current Counts Register				
+							BF_R16	z__Reserved2;
+							BF_R32	z__Reserved3[59];
+		S_DMACH	CH[9];
+							BF_R32	z__Reserved4[49];
+		S_DMACH	 MDMA_D0;
+		S_DMACH	 MDMA_S0;
+		S_DMACH	 MDMA_D1;
+		S_DMACH	 MDMA_S1;
+	};
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_PPI
+	{
+		BF_R32	Control;			//	PPI Control Register		
+		BF_R32	Status;				//	PPI Status Register			
+		BF_R32	Count;				//	PPI Transfer Count Register	
+		BF_R32	Delay;				//	PPI Delay Count Register	
+		BF_R32	Frame;				//	PPI Frame Length Register	
+	};
+	
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	struct S_TWI
+	{
+		BF_R32	CLKDIV;				//	Serial Clock Divider Register			
+		BF_R32	CONTROL;			//	TWI Control Register						
+		BF_R32	SLAVE_CTL;			//	Slave Mode Control Register				
+		BF_R32	SLAVE_STAT;			//	Slave Mode Status Register				
+		BF_R32	SLAVE_ADDR;			//	Slave Mode Address Register				
+		BF_R32	MASTER_CTL;			//	Master Mode Control Register				
+		BF_R32	MASTER_STAT;		//	Master Mode Status Register				
+		BF_R32	MASTER_ADDR;		//	Master Mode Address Register				
+		BF_R32	INT_STAT;			//	TWI Interrupt Status Register			
+		BF_R32	INT_MASK;			//	TWI Master Interrupt Mask Register		
+		BF_R32	FIFO_CTL;			//	FIFO Control Register					
+		BF_R32	FIFO_STAT;			//	FIFO Status Register						
+		BF_R32	XMT_DATA8;			//	FIFO Transmit Data Single Byte Register	
+		BF_R32	XMT_DATA16;			//	FIFO Transmit Data Double Byte Register	
+		BF_R32	RCV_DATA8;			//	FIFO Receive Data Single Byte Register	
+		BF_R32	RCV_DATA16;			//	FIFO Receive Data Double Byte Register	
 	};
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -149,28 +381,36 @@ namespace HW
 	//			MKPID(UOTGHS, 40),	MKPID(TRNG, 41),	MKPID(EMAC, 42),	MKPID(CAN0, 43),	MKPID(CAN1, 44) };
 	//};
 
-	//MK_PTR(SMC, 	0x400E0000);
+	MK_PTR(SPI0,	SPI0_CTL);
+	MK_PTR(SPI1,	SPI1_CTL);
 
-	//MK_PTR(MATRIX,	0x400E0400);
-	//MK_PTR(PMC,		0x400E0600);
-	//MK_PTR(UART,	0x400E0800);
+	MK_PTR(TIMER0, 	TIMER0_CONFIG);
+	MK_PTR(TIMER1, 	TIMER1_CONFIG);
+	MK_PTR(TIMER2, 	TIMER2_CONFIG);
 
-	//MK_PTR(EFC0,	0x400E0A00);
-	//MK_PTR(EFC1,	0x400E0C00);
-	//MK_PTR(PIOA,	0x400E0E00);
-	//MK_PTR(PIOB,	0x400E1000);
-	//MK_PTR(PIOC,	0x400E1200);
-	//MK_PTR(PIOD,	0x400E1400);
+	MK_PTR(TIMER,	TIMER_ENABLE);
 
-	//MK_PTR(RSTC,	0X400E1A00);
+	MK_PTR(PIOF,	PORTFIO);
+	MK_PTR(PIOG,	PORTGIO);
+
+	MK_PTR(PORTF,	PORTF_FER);
+	MK_PTR(PORTG,	PORTG_FER);
+
+	MK_PTR(SPORT0,	SPORT0_TCR1);
+	MK_PTR(SPORT1,	SPORT1_TCR1);
+
+	MK_PTR(DMA,		DMA_TC_PER);
+
+	MK_PTR(PPI,		PPI_CONTROL);
+
+	MK_PTR(TWI,		TWI_CLKDIV);
+
 	//MK_PTR(SUPC,	0X400E1A10);
 	//MK_PTR(RTT,		0X400E1A30);
 	//MK_PTR(WDT,		0X400E1A50);
 	//MK_PTR(RTC,		0X400E1A60);
 
 	//MK_PTR(SPI,		0X40008000);
-	//MK_PTR(SPI0,	0X40008000);
-	//MK_PTR(SPI1,	0X4000C000);
 
 	//MK_PTR(TC0,		0X40080000);
 	//MK_PTR(TC1,		0X40084000);

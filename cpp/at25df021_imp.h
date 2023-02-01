@@ -278,7 +278,7 @@ static u16 WaitReadSPI0()
 
 static void WriteSyncDMA(void *data, u16 count)
 {
-	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|3;	
+	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|TDBR_DMA;	
 
 	*pDMA5_CONFIG = FLOW_STOP|DI_EN|WDSIZE_8/*|SYNC*/;
 	*pDMA5_START_ADDR = (void*)data;
@@ -303,7 +303,7 @@ static void WriteSyncDMA(void *data, u16 count)
 
 static void WriteAsyncDMA(void *data, u16 count)
 {
-	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|3;	
+	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|TDBR_DMA;	
 
 	*pDMA5_CONFIG = FLOW_STOP|DI_EN|WDSIZE_8/*|SYNC*/;
 	*pDMA5_START_ADDR = (void*)data;
@@ -340,7 +340,7 @@ static bool CheckWriteAsyncDMA()
 
 static void ReadSyncDMA(void *data, u16 count)
 {
-	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|2;
+	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|RDBR_DMA;
 	*pDMA5_CONFIG = FLOW_STOP|DI_EN|WDSIZE_8|WNR|SYNC;
 
 	*pDMA5_START_ADDR = data;
@@ -370,7 +370,7 @@ static void ReadAsyncDMA(void *data, u32 stAdr, u16 count)
 	__WriteFlash(stAdr);
 	__WriteFlash(0);
 
-	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|2;
+	*pSPI0_CTL = COMMON_SPI_DMA_SETTINGS|RDBR_DMA;
 	*pDMA5_CONFIG = FLOW_STOP|DI_EN|WDSIZE_8|WNR|SYNC;
 
 	*pDMA5_START_ADDR = data;
@@ -873,7 +873,7 @@ static void __SendSingleCommand( const int iCommand )
 static void SetupSPI()
 {
 	*pSPI0_BAUD = BAUD_RATE_DIVISOR;
-	*pSPI0_CTL = COMMON_SPI_SETTINGS|TIMOD01;	
+	*pSPI0_CTL = COMMON_SPI_SETTINGS|TDBR_CORE;	
 	*pPORTFIO_CLEAR = PF8;
 
 	Delay(1);
