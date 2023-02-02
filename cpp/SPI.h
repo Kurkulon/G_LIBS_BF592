@@ -37,11 +37,11 @@ class S_SPIM
 {
 protected:
 
-	static  void			SPI0_Handler();
-	static  void			SPI1_Handler();
+	//static  void			SPI0_Handler();
+	//static  void			SPI1_Handler();
 
-	static S_SPIM *_spi0;
-	static S_SPIM *_spi1;
+	//static S_SPIM *_spi0;
+	//static S_SPIM *_spi1;
 
 	static 	u32 			_busy_mask;
 	static 	u32 			_alloc_mask;
@@ -57,7 +57,6 @@ protected:
 
 	const byte				_num;
 	const byte				_pid;
-	const byte				_ivg;
 	SPIHWT					_hw;
 
 	const byte				_MASK_CS_LEN;
@@ -67,7 +66,7 @@ protected:
 	List<DSCSPI>	_reqList;
 	DSCSPI*			_dsc;
 
-	enum STATE { ST_WAIT = 0, ST_WRITE, ST_STOP };
+	enum STATE { ST_WAIT = 0, ST_WRITE, ST_READ, ST_STOP };
 
 	STATE _state;
 
@@ -76,22 +75,19 @@ protected:
 	u16		_MASK_CS_ALL;
 	u16		_spimode;
 
-	u32		_irqCount;
+	//void IRQ_Handler();
 
-	void IRQ_Handler();
-
-	void Write(DSCSPI *dsc);
 
 public:
 
-	S_SPIM(byte num, T_HW::S_PORT* portcs, T_HW::S_PIO* piocs, u16* mcs, byte mcslen, byte ivg, u32 gen_clk)
-		: _num(num), _pid(_spi_pid[num]), _ivg(ivg), _PORT_CS(portcs), _PIO_CS(piocs), _MASK_CS(mcs), _GEN_CLK(gen_clk), _MASK_CS_LEN(mcslen), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
+	S_SPIM(byte num, T_HW::S_PORT* portcs, T_HW::S_PIO* piocs, u16* mcs, byte mcslen, u32 gen_clk)
+		: _num(num), _pid(_spi_pid[num]), _PORT_CS(portcs), _PIO_CS(piocs), _MASK_CS(mcs), _GEN_CLK(gen_clk), _MASK_CS_LEN(mcslen), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
 
 	bool CheckWriteComplete()	{ return _DMA.CheckComplete() && (_hw->Stat & SPIF) && (_hw->Stat & TXS) == 0; }
 	bool CheckReadComplete()	{ return _DMA.CheckComplete(); }
 
-	void ChipSelect(byte num, u16 spimode)	{ _spimode = spimode & (CPOL|CPHA|LSBF); _PIO_CS->CLR(_MASK_CS[num]); }
-	void ChipDisable()						{ _PIO_CS->SET(_MASK_CS_ALL); }
+	void ChipSelect(byte num, u16 spimode, u16 baud)	{ _hw->Baud = baud; _spimode = spimode & (CPOL|CPHA|LSBF); _PIO_CS->CLR(_MASK_CS[num]); }
+	void ChipDisable()									{ _PIO_CS->SET(_MASK_CS_ALL); }
 
 
 	bool Connect(u32 baudrate);

@@ -8,30 +8,30 @@ u32 			S_SPIM::_alloc_mask = 0;
 const byte		S_SPIM::_spi_pid[SPI_NUM]	= {	PID_DMA5_SPI0_RX_TX,	PID_DMA6_SPI1_RX_TX };
 SPIHWT const	S_SPIM::_spi_hw[SPI_NUM]	= { HW::SPI0,				HW::SPI1			};
 
-S_SPIM *S_SPIM::_spi0;
-S_SPIM *S_SPIM::_spi1;
+//S_SPIM *S_SPIM::_spi0;
+//S_SPIM *S_SPIM::_spi1;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#pragma interrupt
-void S_SPIM::SPI0_Handler()
-{ 
-	if (_spi0 != 0) 
-	{
-		_spi0->IRQ_Handler();
-	};
-}
+//#pragma interrupt
+//void S_SPIM::SPI0_Handler()
+//{ 
+//	if (_spi0 != 0) 
+//	{
+//		_spi0->IRQ_Handler();
+//	};
+//}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#pragma interrupt
-void S_SPIM::SPI1_Handler()
-{ 
-	if (_spi1 != 0)
-	{
-		_spi1->IRQ_Handler(); 
-	};
-}
+//#pragma interrupt
+//void S_SPIM::SPI1_Handler()
+//{ 
+//	if (_spi1 != 0)
+//	{
+//		_spi1->IRQ_Handler(); 
+//	};
+//}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -45,21 +45,21 @@ void S_SPIM::InitHW()
 		HW::PORTF->FER |= PF13|PF14|PF15;
 		HW::PORTF->MUX &= ~(PF13|PF14|PF15);
 
-		_spi0 = this;
+		//_spi0 = this;
 
-		InitIVG(_ivg, _pid, SPI0_Handler); 
+		//InitIVG(_ivg, _pid, SPI0_Handler); 
 	}
 	else
 	{
 		HW::PORTF->FER |= PG8|PG9|PG10;
 		HW::PORTF->MUX &= ~(PG8|PG9|PG10);
 
-		_spi1 = this;
+		//_spi1 = this;
 
-		InitIVG(_ivg, _pid, SPI1_Handler); 
+		//InitIVG(_ivg, _pid, SPI1_Handler); 
 	};
 
-	SIC_DisableIRQ(_pid);
+	//SIC_DisableIRQ(_pid);
 
 	_PIO_CS->SET(_MASK_CS_ALL); 
 
@@ -155,7 +155,7 @@ void S_SPIM::WritePIO(void *data, u16 count)
 
 void S_SPIM::WriteAsyncDMA(void *data, u16 count)
 {
-	_hw->Ctl = MSTR|TDBR_DMA|(_spimode&(CPOL|CPHA|LSBF));
+	_hw->Ctl = GM|MSTR|TDBR_DMA|(_spimode&(CPOL|CPHA|LSBF));
 
 	_DMA.Write8(data, count);
 
@@ -178,7 +178,7 @@ void S_SPIM::WriteSyncDMA(void *data, u16 count)
 
 void S_SPIM::WriteAsyncDMA(void *data1, u16 count1, void *data2, u16 count2)
 {
-	_hw->Ctl = MSTR|TDBR_DMA|(_spimode&(CPOL|CPHA|LSBF));
+	_hw->Ctl = GM|MSTR|TDBR_DMA|(_spimode&(CPOL|CPHA|LSBF));
 
 	_DMA.Write8(data1, count1, data2, count2);
 
@@ -269,115 +269,9 @@ bool S_SPIM::AddRequest(DSCSPI *d)
 
 	if (d->baud < 2) d->baud = 2;
 
-	u32 t = cli();
-
-	if (_dsc == 0)
-	{
-		Write(d);
-	}
-	else
-	{
-		_reqList.Add(d);
-	};
-
-	sti(t);
+	_reqList.Add(d);
 
 	return true;
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void S_SPIM::Write(DSCSPI *dsc)
-{
-	_hw->Ctl = 0;
-	_irqCount = 0;
-	_dsc = dsc;
-
-	ChipSelect(dsc->csnum, dsc->mode);  //_PIO_CS->CLR(_MASK_CS[_dsc->csnum]);
-
-	_hw->Baud = dsc->baud;
-
-	if (dsc->alen == 0)
-	{
-		if (dsc->wdata != 0 && dsc->wlen > 0)
-		{
-			WriteAsyncDMA(dsc->wdata, dsc->wlen);
-
-			_state = ST_WRITE; 
-		}
-		else if (dsc->rdata != 0 && dsc->rlen > 0)
-		{
-			ReadAsyncDMA(dsc->rdata, dsc->rlen);
-
-			_state = ST_STOP; 
-		};
-	}
-	else
-	{
-		WriteAsyncDMA(&dsc->adr, dsc->alen, dsc->wdata, dsc->wlen);
-
-		_state = ST_WRITE; 
-	};
-
-	SIC_EnableIRQ(_pid);
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void S_SPIM::IRQ_Handler()
-{
-	_irqCount += 1;
-
-	switch (_state)
-	{
-		case ST_WRITE:
-		{
-			DSCSPI &dsc = *_dsc;
-
-			if (CheckWriteComplete())
-			{
-				_DMA.Disable();
-
-				if (dsc.rdata != 0 && dsc.rlen > 0)
-				{
-					ReadAsyncDMA(dsc.rdata, dsc.rlen);
-				};
-
-				_state = ST_STOP; 
-			};
-
-			break;
-		};
-
-		case ST_STOP:
-		{
-			if (CheckReadComplete())
-			{
-				_dsc->ready = true;
-				
-				_dsc = _reqList.Get();
-				
-				ChipDisable();//_PIO_CS->SET(_MASK_CS_ALL);
-
-				_DMA.Disable();
-
-				_hw->Ctl = 0;
-
-				if (_dsc != 0)
-				{
-					Write(_dsc);
-				}
-				else
-				{
-					_state = ST_WAIT; 
-
-					SIC_DisableIRQ(_pid);
-				};
-			};
-
-			break;
-		};
-	};
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -386,241 +280,95 @@ bool S_SPIM::Update()
 {
 	bool result = false;
 
-#ifdef CPU_SAME53
-
-	T_HW::S_SPI* spi = _uhw.spi;
+	HW::PIOG->SET(PG3);
 
 	switch (_state)
 	{
-		case WAIT:
+		case ST_WAIT:	//++++++++++++++++++++++++++++++++++++++++++++++
+		{
+			_dsc = _reqList.Get();
 
-			if (CheckReset())
+			if (_dsc != 0)
 			{
-				Usic_Update();
-			}
-			else
-			{
-				_dsc = _reqList.Get();
+				_hw->Ctl = 0;
 
-				if (_dsc != 0)
+				ChipSelect(_dsc->csnum, _dsc->mode, _dsc->baud);  //_PIO_CS->CLR(_MASK_CS[_dsc->csnum]);
+
+				if (_dsc->alen == 0)
 				{
-					Usic_Lock();
-
-					ChipSelect(_dsc->csnum);  //_PIO_CS->CLR(_MASK_CS[_dsc->csnum]);
-
-					DSCSPI &dsc = *_dsc;
-
-					dsc.ready = false;
-
-					if (dsc.alen == 0)
+					if (_dsc->wdata != 0 && _dsc->wlen > 0)
 					{
-						if (dsc.wdata != 0 && dsc.wlen > 0)
-						{
-							WriteAsyncDMA(dsc.wdata, dsc.wlen);
-							//_DMATX->WritePeripheral(dsc.wdata, &spi->DATA, dsc.wlen, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_TX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
+						WriteAsyncDMA(_dsc->wdata, _dsc->wlen);
 
-							_state = WRITE; 
-						}
-						else if (dsc.rdata != 0 && dsc.rlen > 0)
-						{
-							ReadAsyncDMA(dsc.rdata, dsc.rlen);
-							//spi->CTRLB |= SPI_RXEN;
-							//_DMARX->ReadPeripheral(&spi->DATA, dsc.rdata, dsc.rlen, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_RX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
-							//_DMATX->WritePeripheral(dsc.rdata, &spi->DATA, dsc.rlen+1, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_TX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
-
-							_state = STOP; 
-						};
+						_state = ST_WRITE; 
 					}
-					else
+					else if (_dsc->rdata != 0 && _dsc->rlen > 0)
 					{
-						spi->INTFLAG = ~0;
-						spi->INTENCLR = ~0;
-						spi->CTRLB &= ~SPI_RXEN;
+						ReadAsyncDMA(_dsc->rdata, _dsc->rlen);
 
-						_DMATX->WritePeripheral(&dsc.adr, &spi->DATA, dsc.alen, dsc.wdata, dsc.wlen, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_TX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
-
-						_state = WRITE; 
+						_state = ST_READ; 
 					};
+				}
+				else
+				{
+					WriteAsyncDMA(&_dsc->adr, _dsc->alen, _dsc->wdata, _dsc->wlen);
+
+					_state = ST_WRITE; 
 				};
 			};
 
 			break;
+		};
 
-		case WRITE:
+		case ST_WRITE:	//++++++++++++++++++++++++++++++++++++++++++++++
 		{
-			DSCSPI &dsc = *_dsc;
-
 			if (CheckWriteComplete())
 			{
-				_DMATX->Disable();
+				_DMA.Disable();
 
-				if (dsc.rdata != 0 && dsc.rlen > 0)
+				if (_dsc->rdata != 0 && _dsc->rlen > 0)
 				{
-					ReadAsyncDMA(dsc.rdata, dsc.rlen);
+					ReadAsyncDMA(_dsc->rdata, _dsc->rlen);
 
-					//spi->CTRLB |= SPI_RXEN;
-
-					//_DMARX->ReadPeripheral(&spi->DATA, dsc.rdata, dsc.rlen, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_RX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
-					//_DMATX->WritePeripheral(dsc.rdata, &spi->DATA, dsc.rlen+1, DMCH_TRIGACT_BURST|(((DMCH_TRIGSRC_SERCOM0_TX>>8)+_usic_num*2)<<8), DMDSC_BEATSIZE_BYTE);
-				};
-
-				_state = STOP; 
-			};
-
-			break;
-		};
-
-		case STOP:
-		{
-			if (CheckReadComplete())
-			{
-				_dsc->ready = true;
-				
-				_dsc = 0;
-				
-				ChipDisable();//_PIO_CS->SET(_MASK_CS_ALL);
-
-				_DMARX->Disable();
-				_DMATX->Disable();
-
-				spi->CTRLB &= ~SPI_RXEN;
-				spi->INTFLAG = ~0;
-				spi->INTENCLR = ~0;
-
-				_state = WAIT; 
-
-				Usic_Unlock();
-			};
-
-			break;
-		};
-	};
-
-#elif defined(CPU_XMC48)
-
-	USICHWT	&spi = _uhw;
-
-	switch (_state)
-	{
-		case WAIT:
-
-			if (CheckReset())
-			{
-				Usic_Update();
-			}
-			else
-			{
-				_dsc = _reqList.Get();
-
-				if (_dsc != 0)
-				{
-					Usic_Lock();
-
-					ChipSelect(_dsc->csnum);  //_PIO_CS->CLR(_MASK_CS[_dsc->csnum]);
-
-					_DMA->SetDlrLineNum(_DRL);
-
-					DSCSPI &dsc = *_dsc;
-
-					dsc.ready = false;
-
-					if (dsc.alen == 0)
-					{
-						if (dsc.wdata != 0 && dsc.wlen > 0)
-						{
-							WriteAsyncDMA(dsc.wdata, dsc.wlen);
-
-							_state = WRITE; 
-						}
-						else 
-						{
-							if (dsc.rdata != 0 && dsc.rlen > 0) ReadAsyncDMA(dsc.rdata, dsc.rlen);
-
-							_state = STOP; 
-						};
-					}
-					else
-					{
-						WriteAsyncDMA(&dsc.adr, dsc.alen);
-
-						_state = WRITE_ADR; 
-					};
-				};
-			};
-
-			break;
-
-		case WRITE_ADR:
-		{
-			DSCSPI &dsc = *_dsc;
-
-			u32 psr = spi->PSR_SSCMode;
-
-			if (/*CheckWriteComplete() && */(psr & SPI_MSLS) == 0)
-			{
-				_DMA->Disable();
-
-				if (dsc.wdata != 0 && dsc.wlen > 0)
-				{
-					WriteAsyncDMA(dsc.wdata, dsc.wlen);
-
-					_state = WRITE; 
+					_state = ST_READ; 
 				}
-				else 
+				else
 				{
-					if (dsc.rdata != 0 && dsc.rlen > 0) ReadAsyncDMA(dsc.rdata, dsc.rlen);
-
-					_state = STOP; 
+					_state = ST_STOP; 
 				};
 			};
 
 			break;
 		};
 
-		case WRITE:
+		case ST_READ:	//++++++++++++++++++++++++++++++++++++++++++++++
 		{
-			DSCSPI &dsc = *_dsc;
-
-			//u32 psr = spi->PSR_SSCMode;
-
-			if (/*CheckWriteComplete() && */(spi->PSR_SSCMode & SPI_MSLS) == 0)
+			if (CheckReadComplete())
 			{
-				_DMA->Disable();
+				_hw->Ctl = 0;
+				_DMA.Disable();
 
-				if (dsc.rdata != 0 && dsc.rlen > 0)	ReadAsyncDMA(dsc.rdata, dsc.rlen);
-
-				_state = STOP; 
+				_state = ST_STOP; 
 			};
 
 			break;
 		};
 
-		case STOP:
+		case ST_STOP:	//++++++++++++++++++++++++++++++++++++++++++++++
 		{
-			if (CheckReadComplete())
-			{
-				_dsc->ready = true;
-				
-				_dsc = 0;
-				
-				ChipDisable();//_PIO_CS->SET(_MASK_CS_ALL);
+			_dsc->ready = true;
 
-				_DMA->Disable();
+			ChipDisable();
 
-				spi->TCSR = SPI__TCSR|USIC_TDSSM(1);
-				spi->CCR = SPI__CCR;
-				spi->PCR_SSCMode = SPI__PCR;
+			_dsc = 0;
 
-				_state = WAIT; 
-
-				Usic_Unlock();
-			};
+			_state = ST_WAIT; 
 
 			break;
 		};
 	};
 
-#endif
+	HW::PIOG->CLR(PG3);
 
 	return result;
 }

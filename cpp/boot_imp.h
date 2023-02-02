@@ -282,7 +282,7 @@ static void CheckFlash()
 	
 	flashOK = flashChecked = flashCRCOK = false;
 
-	at25df021_Read(buf, 0, sizeof(buf));
+	//at25df021_Read(buf, 0, sizeof(buf));
 
 	while (1)
 	{

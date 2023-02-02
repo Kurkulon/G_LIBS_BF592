@@ -16,12 +16,15 @@
 
 extern void InitIVG(u32 IVG, u32 PID, void (*EVT)());
 
+#pragma always_inline
 inline void SIC_EnableIRQ(byte pid) { *pSIC_IMASK |= 1UL<<pid; }
 inline void SIC_DisableIRQ(byte pid) { *pSIC_IMASK &= ~(1UL<<pid); }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#pragma always_inline
 inline void ResetWDT()		{ *pWDOG_STAT = 0;		}
+#pragma always_inline
 inline void DisableWDT()	{ *pWDOG_CTL = WDDIS;	}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

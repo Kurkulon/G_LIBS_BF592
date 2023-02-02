@@ -32,7 +32,7 @@ public:
 
 	//void Enable() {  }
 	
-	inline void Disable() { _dmach->CONFIG = 0; }
+	inline void Disable() { _dmach->CONFIG = 0; _dmach->IRQ_STATUS = ~0; }
 	inline bool CheckComplete() { return _dmach->IRQ_STATUS & DMA_DONE; }
 	inline u32 GetBytesLeft()	{ return _dmach->CURR_X_COUNT; }
 	inline u32 GetBytesReady()	{ return _dmach->X_COUNT-_dmach->CURR_X_COUNT; }
