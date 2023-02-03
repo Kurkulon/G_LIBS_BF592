@@ -83,8 +83,8 @@ public:
 	S_SPIM(byte num, T_HW::S_PORT* portcs, T_HW::S_PIO* piocs, u16* mcs, byte mcslen, u32 gen_clk)
 		: _num(num), _pid(_spi_pid[num]), _PORT_CS(portcs), _PIO_CS(piocs), _MASK_CS(mcs), _GEN_CLK(gen_clk), _MASK_CS_LEN(mcslen), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
 
-	bool CheckWriteComplete()	{ return _DMA.CheckComplete() && (_hw->Stat & SPIF) && (_hw->Stat & TXS) == 0; }
-	bool CheckReadComplete()	{ return _DMA.CheckComplete(); }
+	bool CheckWriteComplete()	{ return _DMA.CheckComplete() && (_hw->Stat & (SPIF|TXS)) == SPIF; }
+	bool CheckReadComplete()	{ if (_DMA.CheckComplete()) { _hw->Ctl = 0; _DMA.Disable(); return true;} else return false; }
 
 	void ChipSelect(byte num, u16 spimode, u16 baud)	{ _hw->Baud = baud; _spimode = spimode & (CPOL|CPHA|LSBF); _PIO_CS->CLR(_MASK_CS[num]); }
 	void ChipDisable()									{ _PIO_CS->SET(_MASK_CS_ALL); }
@@ -95,6 +95,8 @@ public:
 	bool AddRequest(DSCSPI *d);
 	bool Update();
 	
+	inline void SetMode(u16 mode) { _spimode = mode & (CPOL|CPHA|LSBF); }
+
 	byte WriteReadByte(byte v);
 
 	void WritePIO(void *data, u16 count);

@@ -176,16 +176,41 @@ namespace T_HW
 		BF_R16			z__Reserved16;
 		BF_R16	Inen;				//	Port I/O Input Enable Register 		
 
-		inline void 	SET(u32 m) 			{ Set = m; }
-		inline void 	CLR(u32 m) 			{ Clear = m; }
-		inline void 	NOT(u32 m) 			{ Toggle = m; }
-		inline void 	WBIT(u32 m, bool c) { if (c) SET(m); else CLR(m); }
+		inline void 	SET(u16 m) 			{ Set = m; }
+		inline void 	CLR(u16 m) 			{ Clear = m; }
+		inline void 	NOT(u16 m) 			{ Toggle = m; }
+		inline void 	WBIT(u16 m, bool c) { if (c) SET(m); else CLR(m); }
 		inline void 	BSET(u16 b) 		{ Set = 1UL<< b; }
 		inline void 	BCLR(u16 b) 		{ Clear = 1UL << b; }
 		inline void 	BTGL(u16 b) 		{ Toggle = 1UL << b; }
 
 		inline bool 	TBSET(u16 b) 		{ return PinState & (1<<b); }
 		inline bool 	TBCLR(u16 b) 		{ return (PinState & (1<<b)) == 0; }
+
+		inline void 	DirSet(u16 m) 		{ Dir |= m; }
+		inline void 	DirClr(u16 m) 		{ Dir &= ~m; }
+
+		inline void		SetFER(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_FER |= m; else *pPORTG_FER |= m;  }
+		inline void		SetMUX(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_MUX |= m; else *pPORTG_MUX |= m;  }
+		inline void		ClrFER(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_FER &= ~m; else *pPORTG_FER &= ~m;  }
+		inline void		ClrMUX(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_MUX &= ~m; else *pPORTG_MUX &= ~m;  }
+
+		inline void		WrFER(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_FER = m; else *pPORTG_FER = m;  }
+		inline void		WrMUX(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_MUX = m; else *pPORTG_MUX = m;  }
+
+		inline void		EnableIRQA_Low(u16 m)	{ ClrFER(m); DirClr(m); Inen |= m; Edge &= ~m;	Polar |= m;					CLR(m); MaskA_Set = m; }
+		inline void		EnableIRQA_High(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge &= ~m;	Polar &= ~m;				CLR(m); MaskA_Set = m; }
+		inline void		EnableIRQA_Rise(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;	Polar &= ~m;	Both &= ~m; CLR(m); MaskA_Set = m; }
+		inline void		EnableIRQA_Fall(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;	Polar |= m;		Both &= ~m; CLR(m); MaskA_Set = m; }
+		inline void		EnableIRQA_Both(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;					Both |= m;	CLR(m); MaskA_Set = m; }
+
+		inline void		EnableIRQB_Low(u16 m)	{ ClrFER(m); DirClr(m); Inen |= m; Edge &= ~m;	Polar |= m;					CLR(m); MaskB_Set = m; }
+		inline void		EnableIRQB_High(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge &= ~m;	Polar &= ~m;				CLR(m); MaskB_Set = m; }
+		inline void		EnableIRQB_Rise(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;	Polar &= ~m;	Both &= ~m; CLR(m); MaskB_Set = m; }
+		inline void		EnableIRQB_Fall(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;	Polar |= m;		Both &= ~m; CLR(m); MaskB_Set = m; }
+		inline void		EnableIRQB_Both(u16 m) 	{ ClrFER(m); DirClr(m); Inen |= m; Edge |= m;					Both |= m;	CLR(m); MaskB_Set = m; }
+
+		inline void		ClearTriggerIRQ(u16 m)	{ Clear = m; }
 	};
 
 	typedef S_PIO S_PIOF, S_PIOG;

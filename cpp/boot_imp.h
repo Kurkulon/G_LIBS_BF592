@@ -353,7 +353,7 @@ int main( void )
 		UpdateBlackFin();
 		FlashUpdate();
 
-		if (tm32.Check(timeOut)) RunMainApp();
+		//if (tm32.Check(timeOut)) RunMainApp();
 
 		MAIN_LOOP_PIN_TGL();
 	};

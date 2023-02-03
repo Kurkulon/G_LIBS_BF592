@@ -51,12 +51,12 @@ bool ComPort::Connect(dword speed, byte parity)
 	*pUART0_LCR = _ModeRegister;
 	SetBoudRate(_BaudRateRegister);
 
-	*pPORTF_MUX	&= ~(PF11|PF12);	
-	*pPORTF_FER |= PF11|PF12;	
+	HW::PIOF->ClrMUX(PF11|PF12);		// *pPORTF_MUX	&= ~(PF11|PF12);	
+	HW::PIOF->SetFER(PF11|PF12);		// *pPORTF_FER |= PF11|PF12;	
 
-	PIO_RTS_FER &= ~MASK_RTS;
-	PIO_RTS_DIR |= MASK_RTS;
-	PIO_RTS_CLR  = MASK_RTS;
+	PIO_RTS->ClrFER(MASK_RTS);			// PIO_RTS_FER &= ~MASK_RTS;
+	PIO_RTS->DirSet(MASK_RTS);			//PIO_RTS_DIR |= MASK_RTS;
+	PIO_RTS->CLR(MASK_RTS);				//PIO_RTS_CLR  = MASK_RTS;
 
 	_status485 = READ_END;
 
@@ -120,7 +120,7 @@ void ComPort::SetBoudRate(word presc)
 
 void ComPort::EnableTransmit(void* src, word count)
 {
-	PIO_RTS_SET = MASK_RTS;
+	PIO_RTS->SET(MASK_RTS);	//PIO_RTS_SET = MASK_RTS;
 
 	*pDMA8_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
@@ -144,14 +144,14 @@ void ComPort::DisableTransmit()
 	*pDMA8_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
 
-	PIO_RTS_CLR = MASK_RTS;
+	PIO_RTS->CLR(MASK_RTS);	//PIO_RTS_CLR = MASK_RTS;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void ComPort::EnableReceive(void* dst, word count)
 {
-	PIO_RTS_CLR = MASK_RTS;
+	PIO_RTS->CLR(MASK_RTS);	//PIO_RTS_CLR = MASK_RTS;
 
 	*pDMA7_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
@@ -177,7 +177,7 @@ void ComPort::DisableReceive()
 	*pDMA7_CONFIG = 0;	// Disable transmit and receive
 	*pUART0_IER = 0;
 
-	PIO_RTS_CLR = MASK_RTS;
+	PIO_RTS->CLR(MASK_RTS);	//PIO_RTS_CLR = MASK_RTS;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

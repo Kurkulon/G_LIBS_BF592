@@ -37,10 +37,10 @@ static S_SPIM	spi(0, HW::PORTF, HW::PIOF, SPI_CS_MASK, ArraySize(SPI_CS_MASK), S
 
 /* application definitions */
 #define SPIMODE	(CPOL|CPHA)
-#define COMMON_SPI_SETTINGS (SPE|MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
-#define TIMOD01 (0x01)                  /* sets the SPI to work with core instructions */
+//#define COMMON_SPI_SETTINGS (SPE|MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
+//#define TIMOD01 (0x01)                  /* sets the SPI to work with core instructions */
 
-#define COMMON_SPI_DMA_SETTINGS (MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
+//#define COMMON_SPI_DMA_SETTINGS (MSTR|CPOL|CPHA)  /* settings to the SPI_CTL */
 
 
 
