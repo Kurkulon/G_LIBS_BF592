@@ -95,6 +95,43 @@ namespace T_HW
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+	struct S_SIC	// System Interrupt Controller 	(0xFFC00100 - 0xFFC001FF)
+	{
+		BF_R32	Imask;	
+		BF_R32	Iar[4];
+		BF_R32	Isr;
+		BF_R32	Iwr;
+
+		inline void EnableIRQ(byte pid)		{ Imask |= 1UL<<pid; }
+		inline void DisableIRQ(byte pid)	{ Imask &= ~(1UL<<pid); }
+
+		inline void IntAssign(byte pid, byte ivg) {	if (ivg > 6) { ivg -= 7; byte n = pid/8; byte i = (pid&7)*4; Iar[n] = (Iar[n] & ~(0xF<<i)) | (ivg<<i); EnableIRQ(pid); }; }
+	};
+
+	#define SIC_BASE_ADR	SIC_IMASK0
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	struct S_EIC	// Event/Interrupt Controller Registers   (0xFFE02000 - 0xFFE02110)
+	{
+		BF_PTR	EVT[16];	
+		BF_R32	z__Reserved[49];
+		BF_R32	Imask;
+		BF_R32	Ipend;
+		BF_R32	Ilat;
+		BF_R32	Iprio;
+
+		inline void EnableIRQ(byte ivg)		{ Imask |= 1UL<<ivg; }
+		inline void DisableIRQ(byte ivg)	{ Imask &= ~(1UL<<ivg); }
+
+		inline void InitIVG(byte ivg, void (*evt)()) { if (ivg < ArraySize(EVT)) { EVT[ivg] = (void*)evt; Imask |= 1UL<<ivg; }; }; 
+
+	};
+
+	#define EIC_BASE_ADR	EVT0
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	struct S_SPI
 	{
 		BF_R16	Ctl;					//	SPI Control Register	
@@ -190,6 +227,11 @@ namespace T_HW
 		inline void 	DirSet(u16 m) 		{ Dir |= m; }
 		inline void 	DirClr(u16 m) 		{ Dir &= ~m; }
 
+		inline void 	SetMaskA(u32 m) 	{ MaskA_Set = m; }
+		inline void 	SetMaskB(u32 m) 	{ MaskB_Set = m; }
+		inline void 	ClrMaskA(u32 m) 	{ MaskA_Clr = m; }
+		inline void 	ClrMaskB(u32 m) 	{ MaskB_Clr = m; }
+
 		inline void		SetFER(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_FER |= m; else *pPORTG_FER |= m;  }
 		inline void		SetMUX(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_MUX |= m; else *pPORTG_MUX |= m;  }
 		inline void		ClrFER(u16 m)		{ if ((&PinState) == (pPORTFIO)) *pPORTF_FER &= ~m; else *pPORTG_FER &= ~m;  }
@@ -243,6 +285,7 @@ namespace T_HW
 		BF_R32	TX;							//	SPORT TX Data Register							
 		BF_R32			z__Reserved5;
 		BF_R32	RX;							//	SPORT RX Data Register							
+		BF_R32			z__Reserved51;
 		BF_R16	RCR1;						//	SPORT Transmit Configuration 1 Register			
 		BF_R16			z__Reserved6;
 		BF_R16	RCR2;						//	SPORT Transmit Configuration 2 Register			
@@ -408,6 +451,9 @@ namespace HW
 	//			MKPID(TC5, 32),		MKPID(TC6, 33),		MKPID(TC7, 34),		MKPID(TC8, 35), 	MKPID(PWM, 36),		MKPID(ADC, 37),		MKPID(DACC, 38),	MKPID(DMAC, 39), 
 	//			MKPID(UOTGHS, 40),	MKPID(TRNG, 41),	MKPID(EMAC, 42),	MKPID(CAN0, 43),	MKPID(CAN1, 44) };
 	//};
+
+	MK_PTR(SIC,		SIC_BASE_ADR);
+	MK_PTR(EIC,		EIC_BASE_ADR);
 
 	MK_PTR(SPI0,	SPI0_CTL);
 	MK_PTR(SPI1,	SPI1_CTL);
