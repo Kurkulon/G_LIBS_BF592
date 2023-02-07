@@ -50,6 +50,8 @@ inline bool dIsValid(float v) { return (((u32*)&v)[2] & 0x7FF0) != 0x7FF0; }
 #define GD(adr, t, i) (*(((t*)adr)+i))
 #define GB(adr,i) (*(((byte*)adr)+i))
 
+inline u16 ReverseWord(u16 v) { return byteswap2(v); }
+inline u32 ReverseDword(u32 v) { return byteswap4(v); }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 union DataCRC
