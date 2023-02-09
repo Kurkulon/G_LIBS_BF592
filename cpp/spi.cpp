@@ -37,13 +37,13 @@ SPIHWT const	S_SPIM::_spi_hw[SPI_NUM]	= { HW::SPI0,				HW::SPI1			};
 
 void S_SPIM::InitHW()
 {
-	_PIO_CS->Dir |= _MASK_CS_ALL; 
-	_PORT_CS->FER &= ~_MASK_CS_ALL; 
+	_PIO_CS->DirSet(_MASK_CS_ALL); 
+	_PIO_CS->ClrFER(_MASK_CS_ALL); 
 
 	if (_num == 0)
 	{
-		HW::PORTF->FER |= PF13|PF14|PF15;
-		HW::PORTF->MUX &= ~(PF13|PF14|PF15);
+		HW::PORTF->FER |= (PF13|PF14|PF15) & _MASK_SCK_MOSI_MISO;
+		HW::PORTF->MUX &= ~((PF13|PF14|PF15) &_MASK_SCK_MOSI_MISO);
 
 		//_spi0 = this;
 
@@ -51,8 +51,8 @@ void S_SPIM::InitHW()
 	}
 	else
 	{
-		HW::PORTF->FER |= PG8|PG9|PG10;
-		HW::PORTF->MUX &= ~(PG8|PG9|PG10);
+		HW::PORTG->FER |= (PG8|PG9|PG10) & _MASK_SCK_MOSI_MISO;
+		HW::PORTG->MUX &= ~((PG8|PG9|PG10) & _MASK_SCK_MOSI_MISO);
 
 		//_spi1 = this;
 
@@ -280,7 +280,7 @@ bool S_SPIM::Update()
 {
 	bool result = false;
 
-	HW::PIOG->SET(PG3);
+	//HW::PIOG->SET(PG3);
 
 	switch (_state)
 	{
@@ -368,7 +368,7 @@ bool S_SPIM::Update()
 		};
 	};
 
-	HW::PIOG->CLR(PG3);
+	//HW::PIOG->CLR(PG3);
 
 	return result;
 }
