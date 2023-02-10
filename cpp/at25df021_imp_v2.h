@@ -18,7 +18,7 @@
 
 static u16 SPI_CS_MASK[] = { PF8 };
 
-static S_SPIM	spi(0, HW::PORTF, HW::PIOF, SPI_CS_MASK, ArraySize(SPI_CS_MASK), SCLK);
+static S_SPIM	spi(0, HW::PIOF, SPI_CS_MASK, ArraySize(SPI_CS_MASK), SCLK);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

@@ -85,9 +85,9 @@ public:
 		: _num(num), _pid(_spi_pid[num]), _PIO_CS(piocs), _MASK_CS(mcs), _MASK_CS_LEN(mcslen), _GEN_CLK(gen_clk),
 		_MASK_SCK_MOSI_MISO(mask_sck_mosi_miso), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
 
-	S_SPIM(byte num, T_HW::S_PORT* portcs, T_HW::S_PIO* piocs, u16* mcs, byte mcslen, u32 gen_clk, u16 mask_sck_mosi_miso = ~0)
-		: _num(num), _pid(_spi_pid[num]), _PIO_CS(piocs), _MASK_CS(mcs), _MASK_CS_LEN(mcslen), _GEN_CLK(gen_clk),
-		_MASK_SCK_MOSI_MISO(mask_sck_mosi_miso), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
+	//S_SPIM(byte num, T_HW::S_PORT* portcs, T_HW::S_PIO* piocs, u16* mcs, byte mcslen, u32 gen_clk, u16 mask_sck_mosi_miso = ~0)
+	//	: _num(num), _pid(_spi_pid[num]), _PIO_CS(piocs), _MASK_CS(mcs), _MASK_CS_LEN(mcslen), _GEN_CLK(gen_clk),
+	//	_MASK_SCK_MOSI_MISO(mask_sck_mosi_miso), _DMA(5+num), _dsc(0), _state(ST_WAIT), _spimode(0) {}
 
 	bool CheckWriteComplete()	{ return _DMA.CheckComplete() && (_hw->Stat & (SPIF|TXS)) == SPIF; }
 	bool CheckReadComplete()	{ if (_DMA.CheckComplete()) { _hw->Ctl = 0; _DMA.Disable(); return true;} else return false; }
