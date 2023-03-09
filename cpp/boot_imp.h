@@ -8,6 +8,8 @@
 #include "CRC16.h"
 #include "at25df021.h"
 
+static bool run = true;
+
 static ComPort com;
 
 static u16 manReqWord = BOOT_MAN_REQ_WORD;
@@ -36,7 +38,7 @@ static void CheckFlash();
 
 static u32 curWriteReqAdr = 0;
 
-static byte buf[SECTOR_SIZE];
+//static byte buf[SECTOR_SIZE];
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -268,6 +270,60 @@ static void UpdateBlackFin()
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#ifdef BOOT_HANDSHAKE
+
+const u64 masterGUID	= BOOT_MGUID;
+const u64 slaveGUID		= BOOT_SGUID;
+
+#pragma pack(1)
+struct ReqHS { u64 guid; u16 crc; };
+struct RspHS { u64 guid; u16 crc; };
+#pragma pack()
+
+bool HandShake()
+{
+	static ReqHS req;
+	static RspHS rsp;
+
+	static ComPort::WriteBuffer wb = { false, sizeof(req), &req };
+
+	static ComPort::ReadBuffer rb = { false, 0, sizeof(rsp), &rsp };
+
+	req.guid = slaveGUID;
+	req.crc = GetCRC16(&req, sizeof(req)-2);
+
+	bool c = false;
+
+	for (byte i = 0; i < 2; i++)
+	{
+		com.Read(&rb, BOOT_HANDSHAKE_PRETIMEOUT, BOOT_HANDSHAKE_POSTTIMEOUT);
+
+		MAIN_LOOP_PIN_SET();
+
+		while(com.Update())
+		{
+			HW::ResetWDT();
+		};
+
+		MAIN_LOOP_PIN_CLR();
+
+		c = (rb.recieved && rb.len == sizeof(RspHS) && GetCRC16(rb.data, rb.len) == 0 && rsp.guid == masterGUID);
+
+		if (c)
+		{
+			com.Write(&wb);
+
+			while(com.Update()) { HW::ResetWDT() ; };
+
+			break;
+		};
+	};
+
+	return c;
+}
+
+#endif
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static void CheckFlash()
 {
@@ -346,19 +402,27 @@ int main( void )
 
 	CheckFlash();
 
+	#ifdef BOOT_HANDSHAKE
+
+		run = HandShake();
+
+	#endif
+
 	tm32.Reset(); timeOut = MS2RT(10000);
 
-	while (1)
+	while (run)
 	{
 		UpdateBlackFin();
 		FlashUpdate();
 
-		//if (tm32.Check(timeOut)) RunMainApp();
+		#ifdef BOOT_HANDSHAKE
+			if (tm32.Check(timeOut)) break;
+		#endif
 
 		MAIN_LOOP_PIN_TGL();
 	};
 
-//	return 0;
+	RunMainApp();
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
