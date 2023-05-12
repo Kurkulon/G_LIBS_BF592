@@ -24,9 +24,11 @@ protected:
 
 public:
 
-	void Write(const volatile void *src, u16 len, u16 ctrl);
-	void Write(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2, u16 ctrl);
-	void Read(volatile void *dst, u16 len, u16 ctrl);
+	void Trans(volatile void *stadr, u16 len, u16 ctrl);
+	void Trans(volatile void *stadr1, u16 len1, u16 mdfy1, u16 ctrl1, volatile void *stadr2, u16 len2, u16 mdfy2, u16 ctrl2);
+
+	//void Write(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2, u16 ctrl);
+	//void Read(volatile void *dst, u16 len, u16 ctrl);
 	
 	DMA_CH(byte chnum) : _dmach(&HW::DMA->CH[chnum]), _chnum(chnum) { }
 
@@ -37,18 +39,21 @@ public:
 	inline u32 GetBytesLeft()	{ return _dmach->CURR_X_COUNT; }
 	inline u32 GetBytesReady()	{ return _dmach->X_COUNT-_dmach->CURR_X_COUNT; }
 
-	inline void Write8(const volatile void *src, u16 len) { Write(src, len, WDSIZE_8); }
-	inline void Write16(const volatile void *src, u16 len) { Write(src, len, WDSIZE_16); }
-	inline void Write32(const volatile void *src, u16 len) { Write(src, len, WDSIZE_32); }
+	inline void Write8(volatile void *src, u16 len)		{ Trans(src, len, WDSIZE_8);	}
+	inline void Write16(volatile void *src, u16 len)	{ Trans(src, len, WDSIZE_16);	}
+	inline void Write32(volatile void *src, u16 len)	{ Trans(src, len, WDSIZE_32);	}
 
-	inline void Read8(volatile void *dst, u16 len) { Read(dst, len, WDSIZE_8); }
-	inline void Read16(volatile void *dst, u16 len) { Read(dst, len, WDSIZE_16); }
-	inline void Read32(volatile void *dst, u16 len) { Read(dst, len, WDSIZE_32); }
+	inline void Read8(volatile void *dst, u16 len)		{ Trans(dst, len, WDSIZE_8|WNR);	}
+	inline void Read16(volatile void *dst, u16 len) 	{ Trans(dst, len, WDSIZE_16|WNR);	}
+	inline void Read32(volatile void *dst, u16 len) 	{ Trans(dst, len, WDSIZE_32|WNR);	}
 
-	inline void Write8(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2) { Write(src1, len1, src2, len2, WDSIZE_8); }
-	inline void Write16(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2) { Write(src1, len1, src2, len2, WDSIZE_16); }
-	inline void Write32(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2) { Write(src1, len1, src2, len2, WDSIZE_32); }
+	inline void Write8(volatile void *src1, u16 len1, volatile void *src2, u16 len2)	{ Trans(src1, len1, 1, WDSIZE_8,  src2, len2, 1, WDSIZE_8);	 }
+	inline void Write16(volatile void *src1, u16 len1, volatile void *src2, u16 len2)	{ Trans(src1, len1, 2, WDSIZE_16, src2, len2, 2, WDSIZE_16); }
+	inline void Write32(volatile void *src1, u16 len1, volatile void *src2, u16 len2)	{ Trans(src1, len1, 4, WDSIZE_32, src2, len2, 4, WDSIZE_32); }
 
+	inline void Read8(volatile void *dst1, u16 len1, volatile void *dst2, u16 len2)		{ Trans(dst1, len1, 1, WDSIZE_8|WNR,  dst2, len2, 1, WDSIZE_8|WNR);	 }
+	inline void Read16(volatile void *dst1, u16 len1, volatile void *dst2, u16 len2)	{ Trans(dst1, len1, 2, WDSIZE_16|WNR, dst2, len2, 2, WDSIZE_16|WNR); }
+	inline void Read32(volatile void *dst1, u16 len1, volatile void *dst2, u16 len2)	{ Trans(dst1, len1, 4, WDSIZE_32|WNR, dst2, len2, 4, WDSIZE_32|WNR); }
 };
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

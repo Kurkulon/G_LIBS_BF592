@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void DMA_CH::Write(const volatile void *src, u16 len, u16 ctrl)
+void DMA_CH::Trans(volatile void *src, u16 len, u16 ctrl)
 {
 	_dmach->CONFIG = 0;
 	_dmach->START_ADDR = (void*)src;
@@ -24,53 +24,87 @@ void DMA_CH::Write(const volatile void *src, u16 len, u16 ctrl)
 	_dmach->X_MODIFY = 1UL<<((ctrl>>2)&3);
 
 	_dmach->IRQ_STATUS = DMA_DONE;
-	_dmach->CONFIG = FLOW_STOP|DI_EN|(ctrl&(WDSIZE_16|WDSIZE_32))|SYNC|DMAEN;
+	_dmach->CONFIG = FLOW_STOP|DI_EN|(ctrl&(WDSIZE_16|WDSIZE_32|WNR))|SYNC|DMAEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void DMA_CH::Write(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2, u16 ctrl)
+//void DMA_CH::Write(const volatile void *src1, u16 len1, const volatile void *src2, u16 len2, u16 ctrl)
+//{
+//	_dmach->CONFIG = 0;
+//
+//	ctrl = (ctrl&(WDSIZE_16|WDSIZE_32))|SYNC|DMAEN;
+//
+//	_dsc1.SA = (void*)src1;
+//	_dsc1.XCNT = len1;
+//	_dsc1.XMOD =  1UL<<((ctrl>>2)&3);
+//
+//	if (src2 != 0 && len2 != 0)
+//	{
+//		_dsc1.NDP = &_dsc2;
+//		_dsc1.DMACFG = FLOW_LARGE|NDSIZE_9|ctrl;
+//
+//		_dsc2.SA = (void*)src2;
+//		_dsc2.XCNT = len2;
+//		_dsc2.XMOD =  1UL<<((ctrl>>2)&3);
+//		_dsc2.DMACFG = FLOW_STOP|DI_EN|ctrl;
+//	}
+//	else
+//	{
+//		_dsc1.DMACFG = FLOW_STOP|DI_EN|ctrl;
+//	};
+//
+//	_dmach->IRQ_STATUS = DMA_DONE;
+//
+//	_dmach->NEXT_DESC_PTR = &_dsc1;
+//	_dmach->CONFIG = FLOW_LARGE|NDSIZE_9|DMAEN;
+//}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//void DMA_CH::Read(volatile void *dst, u16 len, u16 ctrl)
+//{
+//	_dmach->CONFIG = 0;
+//	_dmach->START_ADDR = (void*)dst;
+//	_dmach->X_COUNT = len;
+//	_dmach->X_MODIFY = 1UL<<((ctrl>>2)&3);
+//
+//	_dmach->IRQ_STATUS = DMA_DONE;
+//	_dmach->CONFIG = FLOW_STOP|DI_EN|WNR|(ctrl&(WDSIZE_16|WDSIZE_32))|SYNC|DMAEN;
+//}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void DMA_CH::Trans(volatile void *stadr1, u16 len1, u16 mdfy1, u16 ctrl1, volatile void *stadr2, u16 len2, u16 mdfy2, u16 ctrl2)
 {
 	_dmach->CONFIG = 0;
 
-	ctrl = (ctrl&(WDSIZE_16|WDSIZE_32))|SYNC|DMAEN;
+	ctrl1 = (ctrl1&(WDSIZE_16|WDSIZE_32|WNR))|SYNC|DMAEN;
+	ctrl2 = (ctrl2&(WDSIZE_16|WDSIZE_32|WNR))|SYNC|DMAEN;
 
-	_dsc1.SA = (void*)src1;
+	_dsc1.SA = (void*)stadr1;
 	_dsc1.XCNT = len1;
-	_dsc1.XMOD =  1UL<<((ctrl>>2)&3);
+	_dsc1.XMOD = mdfy1;
 
-	if (src2 != 0 && len2 != 0)
+	if (stadr2 != 0 && len2 != 0)
 	{
 		_dsc1.NDP = &_dsc2;
-		_dsc1.DMACFG = FLOW_LARGE|NDSIZE_9|ctrl;
+		_dsc1.DMACFG = FLOW_LARGE|NDSIZE_9|ctrl1;
 
-		_dsc2.SA = (void*)src2;
+		_dsc2.SA = (void*)stadr2;
 		_dsc2.XCNT = len2;
-		_dsc2.XMOD =  1UL<<((ctrl>>2)&3);
-		_dsc2.DMACFG = FLOW_STOP|DI_EN|ctrl;
+		_dsc2.XMOD = mdfy2;
+		_dsc2.DMACFG = FLOW_STOP|DI_EN|ctrl2;
 	}
 	else
 	{
-		_dsc1.DMACFG = FLOW_STOP|DI_EN|ctrl;
+		_dsc1.DMACFG = FLOW_STOP|DI_EN|ctrl1;
 	};
 
 	_dmach->IRQ_STATUS = DMA_DONE;
 
 	_dmach->NEXT_DESC_PTR = &_dsc1;
 	_dmach->CONFIG = FLOW_LARGE|NDSIZE_9|DMAEN;
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void DMA_CH::Read(volatile void *dst, u16 len, u16 ctrl)
-{
-	_dmach->CONFIG = 0;
-	_dmach->START_ADDR = (void*)dst;
-	_dmach->X_COUNT = len;
-	_dmach->X_MODIFY = 1UL<<((ctrl>>2)&3);
-
-	_dmach->IRQ_STATUS = DMA_DONE;
-	_dmach->CONFIG = FLOW_STOP|DI_EN|WNR|(ctrl&(WDSIZE_16|WDSIZE_32))|SYNC|DMAEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
