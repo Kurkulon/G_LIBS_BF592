@@ -1,0 +1,255 @@
+/* MANAGED-BY-SYSTEM-BUILDER                                    */
+/* VisualDSP++ 5.1.2                                            */
+/* LDF Printer version: 5.9.0.1                                 */
+/* ldfgen.exe version: 5.9.0.1                                  */
+/* VDSG version: 5.9.0.1                                        */
+
+/*
+** ADSP-BF592-A linker description file generated on May 29, 2023 at 11:30:44.
+**
+** Copyright (C) 2000-2010 Analog Devices Inc., All Rights Reserved.
+**
+** This file is generated automatically based upon the options selected
+** in the LDF Wizard. Changes to the LDF configuration should be made by
+** changing the appropriate options rather than editing this file.
+**
+** Configuration:-
+**     crt_doj:                                NewProject_basiccrt.doj
+**     processor:                              ADSP-BF592-A
+**     product_name:                           VisualDSP++ 5.1.2
+**     si_revision:                            0.2
+**     default_silicon_revision_from_archdef:  0.2
+**     using_cplusplus:                        true
+**     mem_init:                               false
+**     use_vdk:                                false
+**     use_mt:                                 false
+**     use_eh:                                 false
+**     use_argv:                               false
+**     running_from_internal_memory:           true
+**     user_heap_src_file:                     C:\Users\User\Documents\VisualDSP Projects\NewProject\NewProject_heaptab.c
+**     libraries_use_stdlib:                   true
+**     libraries_use_fileio_libs:              false
+**     libraries_use_ieeefp_emulation_libs:    false
+**     libraries_use_eh_enabled_libs:          false
+**     libraries_use_fixed_point_io_libs:      false
+**     libraries_use_utility_rom:              true
+**     detect_stackoverflow:                   false
+**     system_heap:                            SCRATCHPAD
+**     system_heap_size:                       1
+**     system_stack:                           SCRATCHPAD
+**     system_stack_size:                      2k
+**     use_sdram:                              false
+**
+*/
+
+ARCHITECTURE(ADSP-BF592-A)
+
+SEARCH_DIR($ADI_DSP/Blackfin/lib)
+
+#define STACK_SIZE 0xFF0
+
+#if !defined(NO_UTILITY_ROM)
+# if defined(__SILICON_REVISION__) && (__SILICON_REVISION__==0)
+#   warning there is no Utility ROM in revision 0.0
+#   define NO_UTILITY_ROM
+# elif !defined(__SILICON_REVISION__) || (__SILICON_REVISION__==0xffff)
+#   warning \
+    The Tools Utility ROM will not be used to link this application because \
+the silicon revision does not specify a specific revision number. This message \
+may be suppressed by defining the LDF macro NO_UTILITY_ROM.
+#   define NO_UTILITY_ROM
+# endif
+#endif
+
+
+// Workarounds are enabled, exceptions are disabled.
+#define RT_LIB_NAME(x) lib ## x ## y.dlb
+#define RT_LIB_NAME_EH(x) lib ## x ## y.dlb
+#define RT_LIB_NAME_MT(x) lib ## x ## y.dlb
+#define RT_LIB_NAME_EH_MT(x) lib ## x ## y.dlb
+#define RT_OBJ_NAME(x) x ## y.doj
+#define RT_OBJ_NAME_MT(x) x ## mty.doj
+
+
+$LIBRARIES = 
+
+   RT_LIB_NAME_MT(small532)
+   ,RT_LIB_NAME_MT(io532)
+   ,RT_LIB_NAME_MT(c532)
+   ,RT_LIB_NAME_MT(event532)
+   ,RT_LIB_NAME_EH_MT(cpp532)
+   ,RT_LIB_NAME(f64ieee532)
+   ,RT_LIB_NAME(dsp532)
+   ,RT_LIB_NAME(sftflt532)
+   ,RT_LIB_NAME(etsi532)
+   ,RT_OBJ_NAME_MT(idle532)
+   ,RT_LIB_NAME_MT(rt_fileio532)
+   ;
+
+$OBJECTS = 
+
+     $COMMAND_LINE_OBJECTS
+   , RT_LIB_NAME(profile532)
+#if !defined(NO_UTILITY_ROM)
+   , romdata-BF592-A.doj
+#endif
+   , $COMMAND_LINE_OBJECTS
+   , "cplbtab592-a.doj"
+   , RT_OBJ_NAME(crtn532);
+
+$OBJS_LIBS_INTERNAL = $OBJECTS{prefersMem("internal")}, $LIBRARIES{prefersMem("internal")};
+
+$OBJS_LIBS_NOT_EXTERNAL = $OBJECTS{!prefersMem("external")}, $LIBRARIES{!prefersMem("external")};
+
+
+MEMORY
+{
+/*
+** ADSP-BF592-A MEMORY MAP.
+**
+** The known memory spaces are as follows:
+**
+** 0xFFE00000 - 0xFFFFFFFF  Core MMR registers (2MB)
+** 0xFFC00000 - 0xFFDFFFFF  System MMR registers (2MB)
+** 0xFFB01000 - 0xFFBFFFFF  Reserved
+** 0xFFB00000 - 0xFFB00FFF  Scratchpad SRAM (4K)
+** 0xFFA20000 - 0xFFAFFFFF  Reserved
+** 0xFFA10000 - 0xFFA1FFFF  L1 Instruction ROM (64K)
+** 0xFFA08000 - 0xFFA0FFFF  Reserved
+** 0xFFA00000 - 0xFFA07FFF  L1 Instruction SRAM (32K)
+** 0xFF808000 - 0xFF9FFFFF  Reserved
+** 0xFF800000 - 0xFF807FFF  L1 Data SRAM (32K)
+** 0xEF001000 - 0xFF7FFFFF  Reserved
+** 0xEF000000 - 0xEF000FFF  Boot ROM (4K)
+** 0x00000000 - 0xEEFFFFFF  Reserved
+**
+** Notes:
+** 0xFF807FEF-0xFF807FFF Required by boot-loader.
+*/
+
+   MEM_L1_SCRATCH          { TYPE(RAM) START(0xFFB00000) END(0xFFB00FFF) WIDTH(8) }
+   MEM_L1_CODE             { TYPE(RAM) START(0xFFA00000) END(0xFFA07FFF) WIDTH(8) }
+   MEM_L1_DATA             { TYPE(RAM) START(0xFF800000) END(0xFF807FFF) WIDTH(8) }
+   
+} /* MEMORY */
+
+PROCESSOR p0
+{
+   OUTPUT($COMMAND_LINE_OUTPUT_FILE)
+   RESOLVE(start, 0xFFA00000)
+   KEEP(start, _main)
+   
+   #if !defined(NO_UTILITY_ROM)
+   #include "ADSP-BF592-A-LDF.h"
+   #endif
+   
+   SECTIONS
+   {
+      /* Workaround for hardware errata 05-00-0189 and 05-00-0310 -
+      ** "Speculative (and fetches made at boundary of reserved memory
+      ** space) for instruction or data fetches may cause false
+      ** protection exceptions" and "False hardware errors caused by
+      ** fetches at the boundary of reserved memory ".
+      **
+      ** Done by avoiding use of 76 bytes from at the end of blocks
+      ** that are adjacent to reserved memory. Workaround is enabled
+      ** for appropriate silicon revisions (-si-revision switch).
+      */
+      //RESERVE(___wab0=MEMORY_END(MEM_L1_SCRATCH) - 75, ___l0 = 76)
+      RESERVE(___wab1=MEMORY_END(MEM_L1_CODE) - 75, ___l1 = 76)
+      RESERVE(___wab2=MEMORY_END(MEM_L1_DATA) - 75, ___l2 = 76)
+      
+      scratchpad NO_INIT
+      {
+         INPUT_SECTION_ALIGN(4)
+         
+         RESERVE(heaps_and_stack_in_SCRATCHPAD, heaps_and_stack_in_SCRATCHPAD_length = STACK_SIZE,4)
+
+         INPUT_SECTIONS($OBJECTS(L1_scratchpad) $LIBRARIES(L1_scratchpad))
+         
+         RESERVE_EXPAND(heaps_and_stack_in_SCRATCHPAD, heaps_and_stack_in_SCRATCHPAD_length, 0, 4)
+         ldf_stack_space = heaps_and_stack_in_SCRATCHPAD;
+         ldf_stack_end = (ldf_stack_space + (STACK_SIZE - 4)) & 0xfffffffc;
+         ldf_heap_space = ldf_stack_end + 4;
+         ldf_heap_end = (ldf_heap_space + (4 - 4)) & 0xfffffffc;
+         ldf_heap_length = ldf_heap_end - ldf_heap_space;
+
+      } > MEM_L1_SCRATCH
+      
+      L1_code
+      {
+         INPUT_SECTION_ALIGN(4)
+         
+         INPUT_SECTIONS($OBJECTS(L1_code) $LIBRARIES(L1_code))
+         
+         INPUT_SECTIONS($OBJECTS(noncache_code) $LIBRARIES(noncache_code))
+         INPUT_SECTIONS($OBJECTS(cplb_code) $LIBRARIES(cplb_code))
+         INPUT_SECTIONS($OBJECTS(cplb) $LIBRARIES(cplb))
+         INPUT_SECTIONS($OBJS_LIBS_INTERNAL(program))
+         INPUT_SECTIONS($OBJS_LIBS_NOT_EXTERNAL(program))
+         INPUT_SECTIONS($OBJECTS(program) $LIBRARIES(program))
+        
+      } > MEM_L1_CODE
+      
+      L1_data_1
+      {
+         INPUT_SECTION_ALIGN(4)
+         ___l1_data_cache_a = 0;
+         ___l1_data_cache_b = 0;
+         
+         INPUT_SECTIONS($OBJECTS(L1_data_a) $LIBRARIES(L1_data_a))
+         INPUT_SECTIONS($OBJECTS(L1_data) $LIBRARIES(L1_data))
+         
+      } > MEM_L1_DATA
+      
+      L1_data_bsz ZERO_INIT
+      {
+         INPUT_SECTION_ALIGN(4)
+         
+         INPUT_SECTIONS($OBJECTS(L1_bsz) $LIBRARIES(L1_bsz))
+         INPUT_SECTIONS($OBJS_LIBS_INTERNAL(bsz))
+         INPUT_SECTIONS($OBJS_LIBS_NOT_EXTERNAL(bsz))
+         INPUT_SECTIONS($OBJECTS(bsz) $LIBRARIES(bsz))
+         
+      } > MEM_L1_DATA
+      
+      L1_data_tables
+      {
+         INPUT_SECTION_ALIGN(4)
+         FORCE_CONTIGUITY
+         
+         INPUT_SECTIONS($OBJECTS(ctor) $LIBRARIES(ctor))
+         INPUT_SECTIONS($OBJECTS(ctorl) $LIBRARIES(ctorl))
+         
+      } > MEM_L1_DATA
+      
+      L1_data_2
+      {
+         INPUT_SECTION_ALIGN(4)
+         
+         INPUT_SECTIONS($OBJECTS(constdata) $LIBRARIES(constdata))
+         INPUT_SECTIONS($OBJECTS(voldata) $LIBRARIES(voldata))
+         INPUT_SECTIONS($OBJECTS(cplb_data) $LIBRARIES(cplb_data))
+         INPUT_SECTIONS($OBJS_LIBS_INTERNAL(data1))
+         INPUT_SECTIONS($OBJS_LIBS_NOT_EXTERNAL(data1))
+         INPUT_SECTIONS($OBJECTS(data1) $LIBRARIES(data1))
+         
+      } > MEM_L1_DATA
+      
+      L1_data_3
+      {
+         INPUT_SECTION_ALIGN(4)
+
+         INPUT_SECTIONS($OBJECTS(vtbl) $LIBRARIES(vtbl))
+
+      } > MEM_L1_DATA
+      
+      L1_data_stack_heap
+      {
+         INPUT_SECTION_ALIGN(4)
+         
+      } > MEM_L1_DATA
+      
+   } /* SECTIONS */
+} /* p0 */
+

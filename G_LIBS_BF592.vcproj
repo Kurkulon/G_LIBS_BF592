@@ -174,7 +174,15 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\BF592A.ldf"
+			>
+		</File>
+		<File
 			RelativePath=".\makeobj"
+			>
+		</File>
+		<File
+			RelativePath=".\cpp\startup_BF592A.s"
 			>
 		</File>
 	</Files>
