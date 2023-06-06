@@ -5,16 +5,20 @@
 version = Release
 !endif
 
+!ifndef buildtool
+buildtool = VDSP
+!endif
+
 ####################################################################################################################################################################################################
 
-ADI_DSP = "C:\Program Files (x86)\Analog Devices\VisualDSP 5.1.2"
+#ADI_DSP = "C:\Program Files (x86)\Analog Devices\VisualDSP 5.1.2"
 #ADI_DSP = "c:\Analog Devices\CrossCore Embedded Studio 2.9.1"
 
 curdir = $+ $(%cdrive):$(%cwd) $-
 hdir = cpp
 libdir = $(curdir)\libs
-bindir = $(ADI_DSP)
-incdir = $(ADI_DSP)\Blackfin\include
+#bindir = $(ADI_DSP)
+#incdir = $(ADI_DSP)\Blackfin\include
 
 !ifeq version Debug
 
@@ -40,7 +44,18 @@ libsuffix=r
 
 target_name = G_LIBS_BF592_$(libsuffix)
 
+!ifeq buildtool CCES
+
+libname = $(target_name)_CCES.dlb
+linktool = ccblkfn
+initsuffix = _CCES
+
+!else
+
 libname = $(target_name).dlb
+linktool = linker
+initsuffix = 
+!endif
 
 ####################################################################################################################################################################################################
 
@@ -63,21 +78,39 @@ libname = $(target_name).dlb
 
 .BEFORE
 	@if NOT EXIST $(objdir) @md $(objdir) >nul
+	@call echo Build tool $(buildtool)
 	@call echo Building $(version) version ...
 	@call buildnum.bat
 
 ####################################################################################################################################################################################################
 
+!ifeq buildtool CCES
+
 compiler_options = $(debug_compiler_options) -c -c++ -g -structs-do-not-overlap -no-multiline &
-	-double-size-32 -decls-strong -warn-protos -si-revision 0.2 -proc ADSP-BF592-A -I$(hdir)
+	-double-size-32 -decls-strong -warn-protos -si-revision 0.2 -proc ADSP-BF592-A -Wterse -I$(hdir)
+
+!else
+
+compiler_options = $(debug_compiler_options) -c -c++ -g -structs-do-not-overlap -no-multiline &
+	-double-size-32 -decls-strong -warn-protos -si-revision 0.2 -proc ADSP-BF592-A -Wterse -I$(hdir)
+
+!endif
 
 ####################################################################################################################################################################################################
 
 link_options = -build-lib -proc ADSP-BF592-A -si-revision 0.2
-  
+
 ####################################################################################################################################################################################################
 
-link_options_initcode = -e -proc ADSP-BF592-A -si-revision 0.2 -MDNO_UTILITY_ROM -MD__cplusplus -MDUSE_SCRATCHPAD_STACK -MDUSE_SCRATCHPAD_HEAP -MDSTACK_SIZE=1K -MDHEAP_SIZE=0 -MDSTACKHEAP_SIZE=1K
+!ifeq buildtool CCES
+
+link_options_initcode = -proc ADSP-BF592-A -si-revision 0.2 -flags-link -e,-MDADI_$(buildtool)
+
+!else
+
+link_options_initcode = -e -proc ADSP-BF592-A -si-revision 0.2
+
+!endif
 
 ####################################################################################################################################################################################################
 
@@ -116,21 +149,21 @@ link_options_initcode = -e -proc ADSP-BF592-A -si-revision 0.2 -MDNO_UTILITY_ROM
 ####################################################################################################################################################################################################
 #ccblkfn.exe -proc ADSP-BF592-A -build-lib -o .\Release\NewProject.dlb .\Release\NewProject.doj
 
-$(libname) : $(modules_obj) initcode_osc25.dxe initcode_osc16.dxe
+$(libname) : $(modules_obj) initcode$(initsuffix)_osc25.dxe initcode$(initsuffix)_osc16.dxe
 	@echo Creating library $(libname) ...
 	@ccblkfn	$(link_options) -o "$^." $(modules_obj)
 
 ####################################################################################################################################################################################################
 
-initcode_osc25.dxe : initcode_osc25.doj
+initcode$(initsuffix)_osc25.dxe : initcode_osc25.doj
 	@echo Linking $^@ ...
-	@linker	$(link_options_initcode) -T initcode.ldf -o $^. $<
+	@$(linktool) $(link_options_initcode) -T initcode.ldf -o $^. $<
 
 ####################################################################################################################################################################################################
 
-initcode_osc16.dxe : initcode_osc16.doj
+initcode$(initsuffix)_osc16.dxe : initcode_osc16.doj
 	@echo Linking $^@ ...
-	@linker	$(link_options_initcode) -T initcode.ldf -o $^. $<
+	@$(linktool) $(link_options_initcode) -T initcode.ldf -o $^. $<
 
 ####################################################################################################################################################################################################
 

@@ -52,6 +52,12 @@
 #define INTERRUPT_BITS 0x400	// just IVG15
 #define SYSCFG_VALUE 0x30
 
+//#ifdef ADI_CCES
+//#define DEFAULT_EXEPTION_HANDLER __cec_int_dispatcher
+//#else
+//#define DEFAULT_EXEPTION_HANDLER __unknown_exception_occurred
+//#endif
+
 	.section/DOUBLEANY program;
 	.file_attr requiredForROMBoot;
 	.align 2;
@@ -113,8 +119,8 @@ start:
 	// there is defined behaviour.
 	P0 += 2*4;		// Skip Emulation and Reset
 	P1 = 13;
-	R1.L = __unknown_exception_occurred;
-	R1.H = __unknown_exception_occurred;
+	R1.L = dummy_exception;
+	R1.H = dummy_exception;
 	LSETUP (.ivt,.ivt) LC0 = P1;
 .ivt:	[P0++] = R1;
 
@@ -228,12 +234,18 @@ supervisor_mode:
 // standard
 	// Call the application program.
 	CALL.X _main;
+	
+dummy_exception:
+
+	EMUEXCPT;
+	IDLE;
+	JUMP dummy_exception; 
 
 /////////////////////////////////////////////////////////////////
 // call-exit
-	CALL.X _exit;	// passing in main's return value
-.extern _exit;
-.type _exit,STT_FUNC;
+//	CALL.X _exit;	// passing in main's return value
+//.extern _exit;
+//.type _exit,STT_FUNC;
 
 /////////////////////////////////////////////////////////////////
 // standard
@@ -245,8 +257,8 @@ supervisor_mode:
 .extern _main;
 .type _main,STT_FUNC;
 .extern ldf_stack_end;
-.extern __unknown_exception_occurred;
-.type __unknown_exception_occurred,STT_FUNC;
+//.extern DEFAULT_EXEPTION_HANDLER;
+//.type DEFAULT_EXEPTION_HANDLER,STT_FUNC;
 
 
 /////////////////////////////////////////////////////////////////

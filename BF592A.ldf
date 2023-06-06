@@ -70,32 +70,66 @@ may be suppressed by defining the LDF macro NO_UTILITY_ROM.
 #define RT_OBJ_NAME(x) x ## y.doj
 #define RT_OBJ_NAME_MT(x) x ## mty.doj
 
+#ifdef ADI_CCES
 
 $LIBRARIES = 
 
-   RT_LIB_NAME_MT(small532)
-   ,RT_LIB_NAME_MT(io532)
-   ,RT_LIB_NAME_MT(c532)
-   ,RT_LIB_NAME_MT(event532)
-   ,RT_LIB_NAME_EH_MT(cpp532)
-   ,RT_LIB_NAME(f64ieee532)
-   ,RT_LIB_NAME(dsp532)
-   ,RT_LIB_NAME(sftflt532)
-   ,RT_LIB_NAME(etsi532)
-   ,RT_OBJ_NAME_MT(idle532)
-   ,RT_LIB_NAME_MT(rt_fileio532)
-   ;
+	libcc.dlb
+	//,libio.dlb
+	//,libc.dlb
+	//,librt_fileio.dlb
+	,libcpp.dlb
+	//,libdsp.dlb
+	//,libetsi.dlb
+	//,libssl.dlb
+	//,libdrv.dlb
+	//,libldr.dlb
+	//,libdyn.dlb
+	//,libsmall.dlb
+	,libevent.dlb
+	//,libprofile.dlb
+	//,libosal_noos.dlb
+	;
 
 $OBJECTS = 
 
-     $COMMAND_LINE_OBJECTS
-   , RT_LIB_NAME(profile532)
+	$COMMAND_LINE_OBJECTS
 #if !defined(NO_UTILITY_ROM)
-   , romdata-BF592-A.doj
+   ,romdata-BF592-A.doj
 #endif
-   , $COMMAND_LINE_OBJECTS
-   , "cplbtab592-a.doj"
-   , RT_OBJ_NAME(crtn532);
+//   ,"app_cplbtab.doj"
+   ,crtn592-A.doj
+   ;
+
+#else
+
+	$LIBRARIES = 
+
+	   RT_LIB_NAME_MT(small532)
+	   ,RT_LIB_NAME_MT(io532)
+	   ,RT_LIB_NAME_MT(c532)
+	   ,RT_LIB_NAME_MT(event532)
+	   ,RT_LIB_NAME_EH_MT(cpp532)
+	   ,RT_LIB_NAME(f64ieee532)
+	   ,RT_LIB_NAME(dsp532)
+	   ,RT_LIB_NAME(sftflt532)
+	   ,RT_LIB_NAME(etsi532)
+	   ,RT_OBJ_NAME_MT(idle532)
+	   ,RT_LIB_NAME_MT(rt_fileio532)
+	   ;
+
+	$OBJECTS = 
+
+		 $COMMAND_LINE_OBJECTS
+	   , RT_LIB_NAME(profile532)
+	#if !defined(NO_UTILITY_ROM)
+	   , romdata-BF592-A.doj
+	#endif
+	   , $COMMAND_LINE_OBJECTS
+	   , "cplbtab592-a.doj"
+	   , RT_OBJ_NAME(crtn532);
+
+#endif
 
 $OBJS_LIBS_INTERNAL = $OBJECTS{prefersMem("internal")}, $LIBRARIES{prefersMem("internal")};
 
