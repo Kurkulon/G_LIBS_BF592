@@ -452,6 +452,7 @@ namespace HW
 	//			MKPID(UOTGHS, 40),	MKPID(TRNG, 41),	MKPID(EMAC, 42),	MKPID(CAN0, 43),	MKPID(CAN1, 44) };
 	//};
 
+#pragma diag(push)
 #pragma diag(suppress: 1967)
 
 	MK_PTR(SIC,		SIC_BASE_ADR);
@@ -505,7 +506,7 @@ namespace HW
 
 //	MK_PTR(UDP,		0x400A4000);
 
-#pragma diag(restore: 1967)
+#pragma diag(pop)
 
 
 	inline void ResetWDT()		{ *pWDOG_STAT = 0; }

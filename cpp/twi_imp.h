@@ -6,15 +6,17 @@
 #include "twi.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#pragma diag(push)
+#pragma diag(suppress: 1970)
 
 static u16 twiWriteCount = 0;
 static u16 twiReadCount = 0;
 static byte *twiWriteData = 0;
-static byte *twiReadData = 0;
+static byte * twiReadData;
 static DSCTWI* twi_dsc = 0;
 static DSCTWI* twi_lastDsc = 0;
 
-EX_REENTRANT_HANDLER(TWI_ISR)
+EX_INTERRUPT_HANDLER(TWI_ISR)
 {
 	u16 stat = *pTWI_INT_STAT;
 
@@ -230,5 +232,7 @@ bool TWI_AddRequest(DSCTWI *d)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#pragma diag(pop)
 
 #endif // TWI_IMP_H__24_11_2022__18_29
