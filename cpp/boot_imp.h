@@ -415,6 +415,11 @@ int main( void )
 		UpdateBlackFin();
 		FlashUpdate();
 
+		#ifdef BOOT_HW_UPDATE
+			BOOT_HW_UPDATE();
+		#endif
+
+
 		#ifdef BOOT_HANDSHAKE
 			if (tm32.Check(timeOut)) break;
 		#endif
