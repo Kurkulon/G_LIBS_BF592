@@ -149,6 +149,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\fdct.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\fdct_imp.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\list.h"
 				>
 			</File>
@@ -170,6 +178,10 @@
 			</File>
 			<File
 				RelativePath=".\cpp\types.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\wavepack_imp.h"
 				>
 			</File>
 		</Filter>
