@@ -33,7 +33,9 @@
 #define FDCT_LOG2N 6
 #endif
 
+#ifndef FDCT_N
 #define FDCT_N (1UL<<FDCT_LOG2N)
+#endif
 
 #ifndef M_PI
 #define M_PI 3.141592653
