@@ -63,9 +63,28 @@ static void WavePack_uLaw_12Bit(u16 *src, byte *dst, u16 len)
 		exponent = ulaw_0816_expenc[(sample_in >> 4) & 0xff];
 
 		mantissa = (sample_in >> (exponent + 0)) & 0xf;
-
+		
 		sample_out = (sign | (exponent << 4) | mantissa);
 
+		*(dst++) = sample_out;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void WaveUnpack_uLaw_12Bit(byte* src, u16* dst, u16 len)
+{
+	const u16 ulaw_0816_expdec[8] = { 0, 16, 16 * 3, 16 * 7, 16 * 15, 16 * 31, 16 * 63, 16 * 127 };
+
+	//byte sign, exponent, mantissa;
+
+	for (u32 i = len; i > 0; i--)
+	{
+		byte sample_in = *(src++);
+		byte exponent = (byte)((sample_in >> 4) & 7);
+		u16	 sample_out = ulaw_0816_expdec[exponent];
+		sample_out += (u16)((sample_in & 0xF) << (exponent + 0));
+		if ((sample_in & 0x80) != 0) sample_out = (u16)-sample_out;
 		*(dst++) = sample_out;
 	};
 }
@@ -88,7 +107,7 @@ static void WavePack_uLaw_16Bit(u16 *src, byte *dst, u16 len)
 			sample_in = -sample_in;
 		};
 
-		sample_in += 0x10;
+		sample_in += 0x84;
 
 		exponent = ulaw_0816_expenc[(sample_in >> 7) & 0xff];
 
@@ -96,6 +115,25 @@ static void WavePack_uLaw_16Bit(u16 *src, byte *dst, u16 len)
 
 		sample_out = (sign | (exponent << 4) | mantissa);
 
+		*(dst++) = sample_out;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void WaveUnpack_uLaw_16Bit(byte* src, u16* dst, u16 len)
+{
+	const u16 ulaw_0816_expdec[8] = { 0, 132, 132 * 3, 132 * 7, 132 * 15, 132 * 31, 132 * 63, 132 * 127 };
+
+	//byte sign, exponent, mantissa;
+
+	for (u32 i = len; i > 0; i--)
+	{
+		byte sample_in = *(src++);
+		byte exponent = (byte)((sample_in >> 4) & 7);
+		u16	 sample_out = ulaw_0816_expdec[exponent];
+		sample_out += (u16)((sample_in & 0xF) << (exponent + 3));
+		if ((sample_in & 0x80) != 0) sample_out = (u16)-sample_out;
 		*(dst++) = sample_out;
 	};
 }
@@ -140,8 +178,8 @@ static void WavePack_ADPCMIMA(u16 *src, byte* dst, u16 len)
 {
     u16 stepsize = 7;     		/* Quantizer step size */
     i16 predictedSample = 0;	/* Output of ADPCM predictor */
-    i8  index = 0;			/* Index into step size table */
-    u8	newSample;			/* Result of encoding */
+    i8  index = 0;				/* Index into step size table */
+    u8	newSample;				/* Result of encoding */
 
 	byte bits = 0;
 
@@ -164,17 +202,56 @@ static void WavePack_ADPCMIMA(u16 *src, byte* dst, u16 len)
 
 		predictedSample += diff;
 
-		if (predictedSample > 2047) predictedSample = 2047; else if (predictedSample < -2047) predictedSample = -2047;
+		if (predictedSample > 32767) predictedSample = 32767; else if (predictedSample < -32767) predictedSample = -32767;
 
 		index += adpcmima_0416_index_tab[newSample];
 
-		if (index < 0) index = 0; else if (index > 67) index = 67;
+		if (index < 0) index = 0; else if (index > ArraySize(adpcmima_0416_stepsize_tab)) index = ArraySize(adpcmima_0416_stepsize_tab);
 
 		stepsize = adpcmima_0416_stepsize_tab[index];
 
 		bits |= newSample << ((i&1)*4);
 
 		if (i&1) *(dst++) = bits, bits = 0;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void WaveUnpack_ADPCMIMA(byte* src, u16* dst, u16 len)
+{
+	i32	 newSample = 0; // predictedSample
+	u16	 stepsize = 7;
+	i8 index = 0;
+
+	for (u32 i = 0; i < len; i++)
+	{
+		u32 j = i / 2;
+		byte originalSample = (byte)((src[j] >> ((i&1)*4)) & 0xF);
+
+		i32 diff = 0;
+
+		if ((originalSample & 4) != 0) diff += stepsize;
+		if ((originalSample & 2) != 0) diff += stepsize >> 1;
+		if ((originalSample & 1) != 0) diff += stepsize >> 2;
+
+		diff += stepsize >> 3;
+
+		if ((originalSample & 8) != 0) diff = -diff;
+
+		newSample += diff;
+
+		if (newSample > 32767) newSample = 32767;
+		else if (newSample < -32767) newSample = -32767;
+
+		index += adpcmima_0416_index_tab[originalSample];
+
+		if (index < 0) index = 0; else if (index > ArraySize(adpcmima_0416_stepsize_tab)) index = ArraySize(adpcmima_0416_stepsize_tab);
+
+		stepsize = adpcmima_0416_stepsize_tab[index];
+
+		*(dst++) = (i16)newSample;
+
 	};
 }
 

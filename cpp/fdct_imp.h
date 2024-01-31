@@ -427,4 +427,249 @@ static void inverseTransform(FDCT_DATA vector[restrict], FDCT_DATA temp[restrict
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#ifdef _MSC_VER
+
+//#undef FDCT_DATA
+//#undef FDCT_TRIG
+//#undef FDCT_MULT
+//#undef FDCT_FLOAT
+//#undef FDCT_LOG2N
+
+#define FDCT_LOG2MAX 12
+#define FDCT_MAX (1UL<<FDCT_LOG2MAX)
+
+typedef float FDCTDATA;
+typedef float FDCTTRIG;
+
+#define FDCTFLOAT(x) ((FDCTDATA)(x))
+#define FDCTMULT(x)  (x)
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static FDCTTRIG fdcttrig[FDCT_MAX] = { 0 };
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void FDCT_WIN_Init()
+{
+	for (u32 len = 1; len < ArraySize(fdcttrig); len *= 2)
+	{
+		FDCTTRIG* trig = fdcttrig + len;
+
+		for (u32 i = 0; i < len; i++)
+		{
+			trig[i] = FDCTFLOAT(0.5f / cos((i + 0.5) * M_PI / (len * 2)));
+		};
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+inline void Forward_8(FDCTDATA vector[])
+{
+	FDCTDATA temp0 = vector[0] + vector[7];
+	FDCTDATA temp4 = FDCTMULT((vector[0] - vector[7]) * fdcttrig[4]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	FDCTDATA temp1 = vector[1] + vector[6];
+	FDCTDATA temp5 = FDCTMULT((vector[1] - vector[6]) * fdcttrig[5]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	FDCTDATA temp2 = vector[2] + vector[5];
+	FDCTDATA temp6 = FDCTMULT((vector[2] - vector[5]) * fdcttrig[6]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	FDCTDATA temp3 = vector[3] + vector[4];
+	FDCTDATA temp7 = FDCTMULT((vector[3] - vector[4]) * fdcttrig[7]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	FDCTDATA t0 = temp0 + temp3;
+	FDCTDATA x = FDCTMULT((temp0 - temp3) * fdcttrig[2]);
+
+	FDCTDATA t1 = temp1 + temp2;
+	FDCTDATA y = FDCTMULT((temp1 - temp2) * fdcttrig[3]);
+
+	vector[0] = t0 + t1;								//temp0
+	vector[4] = FDCTMULT((t0 - t1) * fdcttrig[1]);	// temp2
+
+	vector[6] = FDCTMULT((x - y) * fdcttrig[1]);
+	vector[2] = x + y + vector[6];	// temp1
+
+	t0 = temp4 + temp7;
+	x = FDCTMULT((temp4 - temp7) * fdcttrig[2]);
+
+	t1 = temp5 + temp6;
+	y = FDCTMULT((temp5 - temp6) * fdcttrig[3]);
+
+	temp4 = t0 + t1;
+	temp6 = FDCTMULT((t0 - t1) * fdcttrig[1]);
+
+	t0 = FDCTMULT((x - y) * fdcttrig[1]);
+	temp5 = x + y + t0;
+
+	vector[1] = temp4 + temp5;
+	vector[3] = temp5 + temp6;
+	vector[5] = temp6 + t0;
+	vector[7] = t0;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void Forward_Transform_v3(FDCTDATA vector[], FDCTDATA temp[], u16 len)
+{
+	//u16 halfLen = len / 2;
+
+	FDCTDATA* vec = temp;
+	FDCTDATA* tmp = vector;
+
+	for (u16 halfLen = len / 2; halfLen > 4; halfLen /= 2)
+	{
+		FDCTTRIG* trig = fdcttrig + halfLen;
+
+		FDCTDATA* t = tmp; tmp = vec; vec = t;
+
+		for (u16 off = 0; off < len; off += halfLen * 2)
+		{
+			for (u16 i = 0; i < halfLen; i++)
+			{
+				FDCTDATA x = vec[off + i];
+				FDCTDATA y = vec[off + halfLen * 2 - 1 - i];
+				tmp[off + i] = x + y;
+				tmp[off + i + halfLen] = FDCTMULT((x - y) * trig[i]);
+			};
+		};
+
+	};
+
+	for (u16 i = 0; i < len; i += 8) Forward_8(tmp + i);
+
+	for (u16 halfLen = 8; halfLen < len; halfLen *= 2)
+	{
+		for (u16 off = 0; off < len; off += halfLen * 2)
+		{
+			for (u16 i = 0; i < halfLen - 1; i++)
+			{
+				vec[off + i * 2 + 0] = tmp[off + i];
+				vec[off + i * 2 + 1] = tmp[off + i + halfLen] + tmp[off + i + halfLen + 1];
+			};
+
+			vec[off + halfLen * 2 - 2] = tmp[off + halfLen - 1];
+			vec[off + halfLen * 2 - 1] = tmp[off + halfLen * 2 - 1];
+		};
+
+		FDCTDATA* t = tmp; tmp = vec; vec = t;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool FDCT_Forward(const i16 *src, FDCTDATA vector[], u16 log2n, float scale)
+{
+	if (log2n < 3 || log2n > FDCT_LOG2MAX || src == 0 || vector == 0) return false;  // Length is not power of 2
+
+	FDCTDATA temp[FDCT_MAX];
+
+	u16 len = 1UL << log2n;
+
+	temp[len - 1] = 0;
+
+	for (u16 i = 0; i < len; i++) vector[i] = src[i];
+
+	Forward_Transform_v3(vector, temp, len);
+
+	vector[0] /= 2;
+
+	for (u16 i = 0; i < len; i++) vector[i] *= scale;
+
+	return true;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+inline void Inverse_4(FDCTDATA vector[])
+{
+	FDCTDATA x = vector[0];
+	FDCTDATA y = FDCTMULT(vector[2] * fdcttrig[1]);
+
+	FDCTDATA temp0 = x + y;
+	FDCTDATA temp1 = x - y;
+
+	y = FDCTMULT((vector[1] + vector[3]) * fdcttrig[1]);
+
+	FDCTDATA temp2 = vector[1] + y;
+	FDCTDATA temp3 = vector[1] - y;
+
+	y = FDCTMULT(temp2 * fdcttrig[2]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	vector[0] = temp0 + y;
+	vector[3] = temp0 - y;
+
+	y = FDCTMULT(temp3 * fdcttrig[3]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+	vector[1] = temp1 + y;
+	vector[2] = temp1 - y;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void Inverse_Transform(FDCTDATA vector[], FDCTDATA temp[], u16 len)
+{
+	if (len == 1) return;
+
+	u16 halfLen = len / 2;
+
+	temp[0] = vector[0];
+	temp[halfLen] = vector[1];
+
+	for (u16 i = 1; i < halfLen; i++)
+	{
+		temp[i] = vector[i * 2];
+		temp[i + halfLen] = vector[i * 2 - 1] + vector[i * 2 + 1];
+	};
+
+	if (halfLen != 4)
+	{
+		Inverse_Transform(temp, vector, halfLen);
+		Inverse_Transform(temp + halfLen, vector, halfLen);
+	}
+	else
+	{
+		Inverse_4(temp);
+		Inverse_4(temp + halfLen);
+	};
+
+	FDCTTRIG* trig = fdcttrig + halfLen;
+
+	for (u16 i = 0; i < halfLen; i++)
+	{
+		FDCTDATA x = temp[i];
+		FDCTDATA y = FDCTMULT(temp[i + halfLen] * trig[i]); // / (cos((i + 0.5) * M_PI / len) * 2);
+
+		vector[i] = x + y;
+		vector[len - 1 - i] = x - y;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool FDCT_Inverse(const FDCTDATA src[], i16 *dst, u16 log2n, float scale)
+{
+	if (log2n < 3 || log2n > FDCT_LOG2MAX || src == 0 || dst == 0) return false;  // Length is not power of 2
+
+	FDCTDATA vector[FDCT_MAX];
+	FDCTDATA temp[FDCT_MAX];
+
+	u16 len = 1UL << log2n;
+
+	for (u16 i = 0; i < len; i++) vector[i] = src[i];
+
+	Inverse_Transform(vector, temp, len);
+
+	for (u16 i = 0; i < len; i++) dst[i] = (i16)(LIM(vector[i] * scale, -32767, 32767));
+
+	return true;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+#endif // #ifdef _MSC_VER
+
 #endif // FDCT_IMP_H__08_11_2023__15_16

@@ -50,5 +50,12 @@ extern bool FastDctLee_inverseTransform(FDCT_DATA vector[], u16 log2n);
 
 extern void FDCT_Init();
 
+#ifdef _MSC_VER
+
+extern void FDCT_WIN_Init();
+
+#endif
+
+
 #endif // FDCT_H__08_11_2023__15_15
 

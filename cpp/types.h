@@ -1,31 +1,6 @@
 #ifndef TYPES_H__15_05_2009__14_37
 #define TYPES_H__15_05_2009__14_37
 
-#include <ccblkfn.h>
-
-//#ifdef _WIN32
-//#ifndef WIN32
-//#define WIN32
-//#endif
-//#endif
-
-#ifdef WIN32
-
-#define __packed /**/
-#define __softfp /**/
-#define __irq /**/
-
-inline void __disable_irq() {}
-inline void __enable_irq() {}
-
-#endif 
-
-#ifdef __DEBUG
-#define __breakpoint() asm("EMUEXCPT;")
-#else
-#define __breakpoint()
-#endif
-
 typedef unsigned char byte, u8;
 typedef unsigned short int word, u16;
 typedef unsigned long int dword, u32;
@@ -35,14 +10,62 @@ typedef signed long int i32;
 typedef signed long long int i64;
 typedef unsigned long long int u64;
 
-#define ArraySize(x) (sizeof(x)/sizeof(x[0]))
+#ifdef _ADI_COMPILER
 
-#ifndef NAN
-static const dword __NAN_dword = 0xFFFFFFFF;
-#define NAN (*((const float*)(&__NAN_dword)))
+#include <ccblkfn.h>
+
+#ifdef __DEBUG
+#define __breakpoint() asm("EMUEXCPT;")
+#else
+#define __breakpoint()
 #endif
 
+inline u16 ReverseWord(u16 v) { return byteswap2(v); }
+inline u32 ReverseDword(u32 v) { return byteswap4(v); }
+
+#endif // _ADI_COMPILER
+
+#ifdef _MSC_VER //WIN32
+
+	#define WINDOWS_IGNORE_PACKING_MISMATCH
+
+	#include <intrin.h>
+
+	#define __packed __declspec(align(1))
+	#define __softfp /**/
+	#define __irq __declspec(naked)
+	#define __align(v)
+	#define __attribute__(v)
+	#define __func__ __FUNCTION__
+	#define restrict /**/
+
+	__forceinline void __breakpoint(int v) { __debugbreak(); }
+	__forceinline void __disable_irq() {}
+	__forceinline void __enable_irq() {}
+	//inline void __nop() {}
+
+	#if _MSC_VER > 1500
+	#pragma comment(lib, "legacy_stdio_definitions.lib")
+	#endif
+
+#else //#ifdef _MSC_VER
+
+	#ifndef NAN
+	static const dword __NAN_dword = 0xFFFFFFFF;
+	#define NAN (*((const float*)(&__NAN_dword)))
+	#endif
+
+#endif // #ifdef _MSC_VER 
+
+
+#define ArraySize(x) (sizeof(x)/sizeof(x[0]))
+
 inline float ABS(float v) { *((u32*)&v) &= 0x7FFFFFFF; return v; }
+
+#define LIM(v, min, max)	(((v) < (min)) ? (min) : (((v) > (max)) ? (max) : (v)))
+#define MIN(a, b)			(((a) < (b)) ? (a) : (b))
+#define MAX(a, b)			(((a) >= (b)) ? (a) : (b))
+
 
 inline bool fIsValid(float v) { return (((u16*)&v)[2] & 0x7F80) != 0x7F80; }
 inline bool dIsValid(float v) { return (((u32*)&v)[2] & 0x7FF0) != 0x7FF0; }
@@ -50,8 +73,6 @@ inline bool dIsValid(float v) { return (((u32*)&v)[2] & 0x7FF0) != 0x7FF0; }
 #define GD(adr, t, i) (*(((t*)adr)+i))
 #define GB(adr,i) (*(((byte*)adr)+i))
 
-inline u16 ReverseWord(u16 v) { return byteswap2(v); }
-inline u32 ReverseDword(u32 v) { return byteswap4(v); }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 union DataCRC
@@ -105,8 +126,11 @@ union DataPointer
 
 	void operator=(void *p) { v = p; } 
 
+#ifdef _ADI_COMPILER
 	void WW(word a) { misaligned_store16(v, a); }
 	word RW() { return misaligned_load16(v); }
+#endif
+
 } ;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
