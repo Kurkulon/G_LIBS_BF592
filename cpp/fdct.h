@@ -45,6 +45,17 @@
 
 #endif 
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+struct PackDCT
+{
+	byte	len;
+	byte	scale;
+	byte	data[16];
+};
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 extern bool FastDctLee_transform(FDCT_DATA vector[], u16 log2n);
 extern bool FastDctLee_inverseTransform(FDCT_DATA vector[], u16 log2n);
 
@@ -52,7 +63,17 @@ extern void FDCT_Init();
 
 #ifdef _MSC_VER
 
+#define FDCT_LOG2MAX 12
+#define FDCT_MAX (1UL<<FDCT_LOG2MAX)
+
+typedef float FDCTDATA;
+typedef float FDCTTRIG;
+
 extern void FDCT_WIN_Init();
+extern bool FDCT_Forward(FDCTDATA vector[], FDCTDATA temp[], u16 log2n, float scale);
+extern bool FDCT_Inverse(FDCTDATA* vector, FDCTDATA* temp, u16 log2n, float scale);
+extern bool PW_FDCT_Inverse(const FDCTDATA src[], i16* dst, u16 log2n, float scale);
+extern bool PW_FDCT_Forward(const i16* src, FDCTDATA vector[], u16 log2n, float scale);
 
 #endif
 

@@ -435,11 +435,6 @@ static void inverseTransform(FDCT_DATA vector[restrict], FDCT_DATA temp[restrict
 //#undef FDCT_FLOAT
 //#undef FDCT_LOG2N
 
-#define FDCT_LOG2MAX 12
-#define FDCT_MAX (1UL<<FDCT_LOG2MAX)
-
-typedef float FDCTDATA;
-typedef float FDCTTRIG;
 
 #define FDCTFLOAT(x) ((FDCTDATA)(x))
 #define FDCTMULT(x)  (x)
@@ -559,15 +554,30 @@ static void Forward_Transform_v3(FDCTDATA vector[], FDCTDATA temp[], u16 len)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-bool FDCT_Forward(const i16 *src, FDCTDATA vector[], u16 log2n, float scale)
+bool FDCT_Forward(FDCTDATA vector[], FDCTDATA temp[], u16 log2n, float scale)
+{
+	if (log2n < 3 || log2n > FDCT_LOG2MAX || temp == 0 || vector == 0) return false;  // Length is not power of 2
+
+	u16 len = 1UL << log2n;
+
+	Forward_Transform_v3(vector, temp, len);
+
+	vector[0] /= 2;
+
+	for (u16 i = 0; i < len; i++) vector[i] *= scale;
+
+	return true;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool PW_FDCT_Forward(const i16* src, FDCTDATA vector[], u16 log2n, float scale)
 {
 	if (log2n < 3 || log2n > FDCT_LOG2MAX || src == 0 || vector == 0) return false;  // Length is not power of 2
 
 	FDCTDATA temp[FDCT_MAX];
 
 	u16 len = 1UL << log2n;
-
-	temp[len - 1] = 0;
 
 	for (u16 i = 0; i < len; i++) vector[i] = src[i];
 
@@ -648,7 +658,22 @@ static void Inverse_Transform(FDCTDATA vector[], FDCTDATA temp[], u16 len)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-bool FDCT_Inverse(const FDCTDATA src[], i16 *dst, u16 log2n, float scale)
+bool FDCT_Inverse(FDCTDATA *vect, FDCTDATA *temp, u16 log2n, float scale)
+{
+	if (log2n < 3 || log2n > FDCT_LOG2MAX || vect == 0 || temp == 0) return false;  // Length is not power of 2
+
+	u16 len = 1UL << log2n;
+
+	Inverse_Transform(vect, temp, len);
+
+	for (u16 i = 0; i < len; i++) vect[i] *= scale;
+
+	return true;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool PW_FDCT_Inverse(const FDCTDATA src[], i16* dst, u16 log2n, float scale)
 {
 	if (log2n < 3 || log2n > FDCT_LOG2MAX || src == 0 || dst == 0) return false;  // Length is not power of 2
 
