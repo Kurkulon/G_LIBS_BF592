@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "fdct.h"
+#include "mdct.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -426,6 +427,76 @@ static u16 WaveUnpack_FDCT(byte* src, i16* dst, u16 srcLen, u16 OVRLAP)
 
 		if (srcLen >= packDctLen) srcLen -= packDctLen; else srcLen = 0;
 	};
+
+	return index + OVRLAP;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+u16 WavePack_MDCT(MDCT_LookUp* init, i16* src, MDCT_DATA* dst, u16 len, u16 shift, u16* packedLen)
+{
+	if (init == 0 || src == 0 || dst == 0) return 0;
+
+	u16 packLen = 0;
+	u16 index = 0;
+	u16 scale = 0;
+	u16 wpLen = 0;
+	u16 N = init->n;
+	u16 OVRLAP = N >> 1;
+
+	//MDCT_DATA fdct_w[FDCT_N];
+
+	for (;(index + N) <= len; index += N - OVRLAP)
+	{
+		mdct_window(init, src + index, init->temp1);
+		mdct_forward(init, init->temp1, dst);
+
+		dst += OVRLAP;
+	};
+
+	//if (packedLen != 0) *packedLen = wpLen;
+
+	return index + OVRLAP;
+};
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+u16 WaveUnpack_MDCT(MDCT_LookUp* init, MDCT_DATA* src, i16* dst, u16 len)
+{
+	if (init == 0 || src == 0 || dst == 0) return 0;
+
+	u16 packLen = 0;
+	u16 index = 0;
+	u16 scale = 0;
+	u16 wpLen = 0;
+	u16 N = init->n;
+	u16 OVRLAP = N >> 1;
+
+	MDCT_DATA* temp1 = init->temp1;
+	MDCT_DATA* temp2 = init->temp2;
+
+	//MDCT_DATA fdct_w[FDCT_N];
+	mdct_backward(init, src, temp1);
+
+	src += OVRLAP;
+	index += N - OVRLAP;
+
+	for (u16 i = 0; i < OVRLAP; i++) *(dst++) = (i16)temp1[i];
+
+	MDCT_DATA* t = temp1; temp1 = temp2; temp2 = t;
+
+	for (;(index + N) <= len; index += N - OVRLAP)
+	{
+		mdct_backward(init, src, temp1);
+
+		for (u16 i = 0; i < OVRLAP; i++) *(dst++) = (i16)(temp1[i] + temp2[i + OVRLAP]);
+
+		t = temp1; temp1 = temp2; temp2 = t;
+
+		src += OVRLAP;
+	};
+
+	//if (packedLen != 0) *packedLen = wpLen;
 
 	return index + OVRLAP;
 }
