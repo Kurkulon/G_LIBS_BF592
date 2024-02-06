@@ -489,7 +489,7 @@ u16 WaveUnpack_MDCT(MDCT_LookUp* init, MDCT_DATA* src, i16* dst, u16 len)
 	{
 		mdct_backward(init, src, temp1);
 
-		for (u16 i = 0; i < OVRLAP; i++) *(dst++) = (i16)(temp1[i] + temp2[i + OVRLAP]);
+		for (u16 i = 0; i < OVRLAP; i++) *(dst++) = (i16)((temp1[i] + temp2[i + OVRLAP])/2);
 
 		t = temp1; temp1 = temp2; temp2 = t;
 
