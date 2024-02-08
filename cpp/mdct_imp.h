@@ -148,18 +148,18 @@ void mdct_init(MDCT_LookUp *lookup, int log2n, MDCT_BITREV *bitrev, MDCT_TRIG *T
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void mdct_window(MDCT_LookUp* lookup, i16* src, MDCT_DATA* dst)
+void mdct_window(MDCT_LookUp* lookup, MDCT_DATA* src, MDCT_DATA* dst)
 {
 	u16			n = lookup->n;
 	u16			n2 = n >> 1;
 	MDCT_TRIG*	win = lookup->win;
 
-	for (u16 i = 0; i < n; i++)
+	for (u16 i = 0; i < n2; i++)
 	{
-		dst[i] = src[i];
+		//dst[i] = src[i];
 
-		//dst[i] = MDCT_FLOAT_CONV(src[i] * win[i]);
-		//dst[n - 1 - i] = MDCT_FLOAT_CONV(src[n - 1 - i] * win[i]);
+		dst[i] = MDCT_FLOAT_CONV(src[i] * win[n2-1-i]);
+		dst[n - 1 - i] = MDCT_FLOAT_CONV(src[n - 1 - i] * win[n2 - 1 - i]);
 	};
 }
 
